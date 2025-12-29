@@ -1,0 +1,15 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Study Abroad Local",
+      "Group": "Development",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "studyabroad_dev",
+      "Username": "studyabroad",
+      "Password": "studyabroad_dev",
+      "SSLMode": "prefer",
+      "Comment": "Local development database"
+    }
+  }
+}

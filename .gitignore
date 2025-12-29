@@ -1,0 +1,75 @@
+# ------------------------------------------------------
+# Core: Next.js & Node.js
+# ------------------------------------------------------
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json # Optional: Ignore if you prefer yarn.lock or pnpm-lock.yaml
+.npm/
+
+# Next.js build output and cache
+.next/
+out/
+build/
+dist/
+
+# Next.js local environment type definitions
+next-env.d.ts
+
+# ------------------------------------------------------
+# Security: Environment Variables (CRITICAL)
+# ------------------------------------------------------
+# Ignore all .env files to protect Gemini API keys, OAuth secrets, and DB URLs
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ------------------------------------------------------
+# Provider Specifics: Vercel, Supabase, Clerk
+# ------------------------------------------------------
+# Vercel
+.vercel/
+
+# Supabase (Local Dev)
+supabase/.temp/
+# Note: Do usually commit supabase/config.toml and migrations, 
+# but NEVER commit secrets inside them. Use env vars instead.
+
+# Clerk
+# (Clerk usually relies on .env files, covered above)
+
+# ------------------------------------------------------
+# IDE & OS System Files
+# ------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# ------------------------------------------------------
+# Testing & Misc
+# ------------------------------------------------------
+coverage/
+.nyc_output/
+cypress/videos
+cypress/screenshots
+*.pem
+
+# ------------------------------------------------------
+# Optional: Python Backend (If using Python for data processing)
+# ------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.pytest_cache/

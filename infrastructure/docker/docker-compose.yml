@@ -1,0 +1,52 @@
+version: '3.8'
+
+# Shared Docker Compose for all applications
+# Each app can extend this with app-specific services
+
+services:
+  # PostgreSQL Database (Shared)
+  postgres:
+    image: postgres:16-alpine
+    container_name: shared-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: studyabroad
+      POSTGRES_PASSWORD: studyabroad_dev
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../packages/shared-db/schemas:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studyabroad"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shared-network
+
+  # pgAdmin (Shared Database Management UI)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: shared-pgadmin
+    ports:
+      - "5050:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@studyabroad.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+      - ./pgadmin-servers.json:/pgadmin4/servers.json
+    depends_on:
+      - postgres
+    networks:
+      - shared-network
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+
+networks:
+  shared-network:
+    driver: bridge

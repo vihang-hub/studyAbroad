@@ -1,0 +1,21 @@
+{
+  "name": "@studyabroad/shared-auth-frontend",
+  "version": "1.0.0",
+  "description": "Shared authentication components for Next.js applications",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "peerDependencies": {
+    "next": ">=15.0.0",
+    "next-auth": ">=5.0.0-beta",
+    "react": ">=19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "typescript": "^5"
+  }
+}

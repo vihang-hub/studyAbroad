@@ -1,0 +1,26 @@
+[project]
+name = "study-abroad-backend"
+version = "0.1.0"
+description = "Study Abroad FastAPI Backend with LangChain RAG"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.black]
+line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
