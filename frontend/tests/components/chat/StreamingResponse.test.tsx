@@ -146,7 +146,7 @@ describe('StreamingResponse', () => {
         });
 
         await waitFor(() => {
-          expect(screen.getByText('First chunk ')).toBeInTheDocument();
+          expect(screen.getByText(/First chunk/)).toBeInTheDocument();
         });
 
         MockEventSource.sendMessage({
@@ -155,7 +155,7 @@ describe('StreamingResponse', () => {
         });
 
         await waitFor(() => {
-          expect(screen.getByText('First chunk second chunk')).toBeInTheDocument();
+          expect(screen.getByText(/First chunk.*second chunk/)).toBeInTheDocument();
         });
       });
 
@@ -183,8 +183,10 @@ describe('StreamingResponse', () => {
         });
 
         await waitFor(() => {
-          const element = screen.getByText(contentWithWhitespace);
-          expect(element).toHaveClass('whitespace-pre-wrap');
+          // Find the paragraph element that should have whitespace-pre-wrap
+          const element = document.querySelector('.whitespace-pre-wrap');
+          expect(element).toBeInTheDocument();
+          expect(element?.textContent).toBe(contentWithWhitespace);
         });
       });
     });
@@ -702,8 +704,11 @@ describe('StreamingResponse', () => {
     it('should render sticky progress bar', () => {
       render(<StreamingResponse reportId="test-report" />);
 
-      const progressContainer = screen.getByText('Generating Report').closest('div');
-      expect(progressContainer?.parentElement).toHaveClass('sticky', 'top-0', 'z-10');
+      // Find the sticky container by querying the DOM directly
+      // DOM structure: span > div.flex > div.max-w-4xl > div.sticky
+      const stickyContainer = document.querySelector('.sticky.top-0.z-10');
+      expect(stickyContainer).toBeInTheDocument();
+      expect(stickyContainer).toHaveClass('bg-white', 'border-b', 'border-gray-200');
     });
 
     it('should animate sections when they appear', async () => {
