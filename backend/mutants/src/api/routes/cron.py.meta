@@ -1,0 +1,15 @@
+{
+    "exit_code_by_key": {
+        "api.routes.cron.x_verify_cron_secret__mutmut_1": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_2": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_3": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_4": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_5": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_6": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_7": null,
+        "api.routes.cron.x_verify_cron_secret__mutmut_8": null
+    },
+    "hash_by_function_name": {},
+    "durations_by_key": {},
+    "estimated_durations_by_key": {}
+}

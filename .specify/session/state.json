@@ -1,0 +1,157 @@
+{
+  "version": "1.0.0",
+  "feature": "001-mvp-uk-study-migration",
+  "feature_path": "specs/001-mvp-uk-study-migration",
+  "last_updated": "2025-01-03T00:00:00Z",
+  "last_session_id": null,
+
+  "pipeline": {
+    "status": "in_progress",
+    "current_stage": "implementation",
+    "started_at": "2024-12-28T00:00:00Z",
+    "completed_at": null
+  },
+
+  "gates": {
+    "gate0_prespec": {
+      "status": "passed",
+      "completed_at": "2024-12-28T00:00:00Z",
+      "agent": null,
+      "artifacts": ["specs/001-mvp-uk-study-migration/spec.md"]
+    },
+    "gate1_architecture": {
+      "status": "passed",
+      "completed_at": "2024-12-29T00:00:00Z",
+      "agent": "architect",
+      "artifacts": [
+        "docs/architecture/system-overview.md",
+        "docs/adr/ADR-0001-environment-configuration-system.md",
+        "docs/adr/ADR-0002-feature-flag-mechanism.md",
+        "docs/adr/ADR-0003-database-abstraction-layer.md",
+        "docs/adr/ADR-0004-logging-infrastructure.md",
+        "docs/adr/ADR-0005-soft-delete-pattern.md",
+        "docs/adr/ADR-0006-shared-component-architecture.md",
+        "docs/threat-model.md"
+      ]
+    },
+    "gate2_design": {
+      "status": "passed",
+      "completed_at": "2024-12-30T00:00:00Z",
+      "agent": "designer",
+      "artifacts": [
+        "docs/api/openapi.yaml",
+        "docs/database/schema.sql",
+        "docs/database/rls-policies.sql",
+        "docs/design/shared-component-interfaces.md",
+        "docs/flows/auth-flow.mmd",
+        "docs/flows/report-generation-flow.mmd"
+      ]
+    },
+    "gate3_testdesign": {
+      "status": "skipped",
+      "completed_at": null,
+      "agent": "test-designer",
+      "artifacts": [],
+      "note": "Tests created during implementation phase"
+    },
+    "gate4_implementation": {
+      "status": "in_progress",
+      "completed_at": null,
+      "agent": "coder",
+      "progress": {
+        "total_tasks": 197,
+        "completed_tasks": 169,
+        "percentage": 86
+      },
+      "current_phase": "Phase 6: Polish",
+      "last_completed_task": "T168",
+      "next_task": "T142",
+      "blockers": []
+    },
+    "gate5_qa": {
+      "status": "partial",
+      "completed_at": null,
+      "agent": "qa-tester",
+      "metrics": {
+        "backend_coverage": 70,
+        "frontend_coverage": 22,
+        "shared_coverage": 99.5,
+        "mutation_score": null
+      },
+      "thresholds": {
+        "coverage": 90,
+        "mutation": 80
+      }
+    },
+    "gate6_validation": {
+      "status": "pending",
+      "completed_at": null,
+      "agent": "validator",
+      "artifacts": []
+    },
+    "gate7_security": {
+      "status": "passed",
+      "completed_at": "2025-01-01T00:00:00Z",
+      "agent": "security-gate-engineer",
+      "artifacts": [
+        "docs/deployment/security-checklist.md"
+      ]
+    },
+    "gate8_deployment": {
+      "status": "pending",
+      "completed_at": null,
+      "agent": "devops-deployment-engineer",
+      "artifacts": []
+    }
+  },
+
+  "tasks": {
+    "remaining": [
+      {"id": "T142", "description": "Create cloud-scheduler-expire.yaml", "phase": "US3", "priority": "high"},
+      {"id": "T143", "description": "Create cloud-scheduler-delete.yaml", "phase": "US3", "priority": "high"},
+      {"id": "T172a", "description": "Implement streaming SLA monitoring", "phase": "Phase6", "priority": "high"},
+      {"id": "T172b", "description": "Add AI service structured logging", "phase": "Phase6", "priority": "high"},
+      {"id": "T172c", "description": "Create SLA violation alerts", "phase": "Phase6", "priority": "high"},
+      {"id": "T172d", "description": "Implement log file rotation", "phase": "Phase6", "priority": "high"},
+      {"id": "T172e", "description": "Implement log retention cleanup", "phase": "Phase6", "priority": "medium"},
+      {"id": "T172f", "description": "Test log rotation", "phase": "Phase6", "priority": "medium"},
+      {"id": "T050a", "description": "Configure backend log rotation", "phase": "Phase2", "priority": "high"},
+      {"id": "T161", "description": "Run Stryker on shared/", "phase": "Phase6", "priority": "medium"},
+      {"id": "T162", "description": "Run Stryker on frontend/", "phase": "Phase6", "priority": "medium"},
+      {"id": "T163", "description": "Run mutmut on backend/", "phase": "Phase6", "priority": "medium"},
+      {"id": "T170", "description": "Validate OpenAPI spec", "phase": "Phase6", "priority": "medium"},
+      {"id": "T171", "description": "Run quickstart.md validation", "phase": "Phase6", "priority": "low"},
+      {"id": "T177-T185", "description": "Documentation tasks", "phase": "Phase6", "priority": "low"}
+    ],
+    "in_progress": [],
+    "blocked": []
+  },
+
+  "recent_activity": [
+    {"timestamp": "2025-01-03T00:00:00Z", "action": "Fixed 17 failing frontend tests", "commit": "a867d73"},
+    {"timestamp": "2025-01-02T00:00:00Z", "action": "Fixed frontend test infrastructure", "commit": "f1e5642"},
+    {"timestamp": "2025-01-01T00:00:00Z", "action": "Updated monorepo configuration", "commit": "e9f37ff"}
+  ],
+
+  "recommendations": {
+    "next_action": "Complete remaining Phase 6 tasks (27 tasks)",
+    "suggested_agent": "coder",
+    "estimated_effort": "1-2 days",
+    "blockers_to_resolve": []
+  },
+
+  "resume_context": {
+    "next_task": "T142",
+    "next_task_description": "Create cloud-scheduler-expire.yaml",
+    "context_notes": "Working on User Story 3 infrastructure tasks",
+    "last_test_run": {
+      "passed": 215,
+      "failed": 0,
+      "coverage": 70
+    },
+    "uncommitted_work": false,
+    "wip_commit": null
+  },
+
+  "session_end": null
+}

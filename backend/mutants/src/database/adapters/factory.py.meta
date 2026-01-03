@@ -1,0 +1,32 @@
+{
+    "exit_code_by_key": {
+        "database.adapters.factory.x_get_database_adapter__mutmut_1": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_2": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_3": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_4": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_5": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_6": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_7": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_8": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_9": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_10": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_11": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_12": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_13": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_14": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_15": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_16": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_17": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_18": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_19": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_20": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_21": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_22": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_23": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_24": null,
+        "database.adapters.factory.x_get_database_adapter__mutmut_25": null
+    },
+    "hash_by_function_name": {},
+    "durations_by_key": {},
+    "estimated_durations_by_key": {}
+}

@@ -41,19 +41,15 @@ Each query:
 ## 5. MVP Scope
 
 ### In Scope
-* UK as the only destination country
-* Gemini-style chat UI (single primary conversational surface)
-* Authentication via:
-    * Google
-    * Apple
-    * Facebook
-    * Email
-* Payment per query (£2.99)
-* AI-generated research report
-* Report storage and retrieval for 30 days
-* Local development mode with PostgreSQL database
-* Environment-based configuration (dev, test, production)
-* Feature flags for Supabase and payments
+  * UK as the only destination country
+  * Gemini-style chat UI (single primary conversational surface)
+  * Authentication via Clerk (see Section 9 for provider details)
+  * Payment per query (see section 9 for details )
+  * AI-generated research report
+  * Report storage and retrieval for 30 days
+  * Local development mode with PostgreSQL database
+  * Environment-based configuration (dev, test, production)
+  * Feature flags for Supabase and payments
 
 ### Out of Scope (Explicit)
 * Multiple countries per query
@@ -102,9 +98,11 @@ The MVP must support three runtime environments with distinct configurations:
     * `DATABASE_URL`: connection string (local PostgreSQL or Supabase)
 
 ### Local PostgreSQL Requirements
-* PostgreSQL must be installed and running on developer machines
-* Database schema must match Supabase schema exactly (environment parity)
-* Migration scripts must work identically on local and Supabase databases
+  * **PostgreSQL 14+** must be installed and running on developer machines
+  * Database schema must match Supabase schema exactly (environment parity)
+  * Migration scripts must work identically on local and Supabase databases
+  * Recommended: Use Homebrew (`brew install postgresql@14`) or Docker (`postgres:14-alpine`)
+
 
 ## 7. UI / UX Requirements
 
@@ -134,17 +132,20 @@ The MVP must support three runtime environments with distinct configurations:
     * Show a clear message: "This MVP currently supports the UK only."
 
 ## 9. Authentication Requirements
-* Users must authenticate before submitting a paid query
-* Supported login methods:
-    * Google OAuth
-    * Apple
-    * Facebook
-    * Email (magic link or password; implementation must be documented)
-* System must assign a stable internal userId
-* All reports must be associated with userId
+  * Users must authenticate before submitting a paid query
+  * **Authentication Provider**: Clerk (supporting multiple OAuth providers)
+  * Supported login methods:
+      * Google OAuth
+      * Apple
+      * Facebook
+      * Email (magic link or password via Clerk)
+  * System must assign a stable internal userId (Clerk user ID)
+  * All reports must be associated with userId
+  * Implementation details documented in ADR-0007
 
 ## 10. Pricing & Payments
-* Price per query: £2.99 (GBP)
+* Default Price per query: £2.99 (GBP). 
+* Price is a variable stored in env file
 * Payment must succeed before report generation
 * If payment fails or is cancelled:
     * No report is generated
@@ -157,10 +158,15 @@ The MVP must support three runtime environments with distinct configurations:
 ## 11. Report Generation
 
 ### AI Behavior
-* Backend calls Gemini APIs
-* Responses are streamed to the frontend
-* Prompt must be primed for the UK
-* The system must not hallucinate factual claims
+  * Backend calls Gemini APIs
+  * Responses are streamed to the frontend
+  * Prompt must be primed for the UK
+  * **Hallucination Prevention**:
+      * All factual claims (statistics, dates, costs, regulations) must be sourced from grounded retrieval context
+      * AI responses must include inline citations for verifiable claims
+      * If data is unavailable in context, AI must explicitly state "Information not available" rather than generating unverified claims
+      * Temperature set to 0.3 for factual consistency
+
 
 ### Mandatory Report Sections
 Every report must contain all of the following sections:
@@ -179,19 +185,33 @@ Every report must contain all of the following sections:
 10. Sources & Citations
 
 ### Citation Rules
-* Factual claims must include citations
-* If data is uncertain, the report must state uncertainty clearly
-* No uncited confident claims are allowed
+  * Factual claims must include citations
+  * **Citation Schema** (JSONB format):
+      ```json
+      {
+        "url": "https://example.com/source",
+        "title": "Source Title",
+        "accessedDate": "2025-01-03",
+        "relevantExcerpt": "Direct quote or summary from source",
+        "credibilityScore": "high|medium|low (optional)"
+      }
+      ```
+  * Minimum 1 citation per report (enforced by validation)
+  * If data is uncertain, the report must state uncertainty clearly with reason
+  * No uncited confident claims are allowed (validation rejects reports without citations)
 
 ## 12. Data Retention & Caching
-* Reports are stored for 30 days
-* Within 30 days:
-    * Reopening a report does not trigger AI regeneration
-* After 30 days:
-    * Reports are **soft deleted**: marked as deleted but data retained for recovery
-    * Soft deleted reports are not accessible to users
-    * Soft deleted reports remain in database with `deletedAt` timestamp
-    * Purging of soft deleted reports is out of scope for MVP
+  * Reports are stored for 30 days
+  * Within 30 days:
+      * Reopening a report does not trigger AI regeneration
+  * After 30 days (soft delete):
+      * Reports are **soft deleted**: marked as deleted but data retained for recovery
+      * Soft deleted reports are not accessible to users
+      * Soft deleted reports remain in database with `deletedAt` timestamp
+  * After 90 days (hard delete):
+      * Soft deleted reports (deletedAt > 90 days ago) are **permanently deleted**
+      * Hard deletion performed by weekly cron job
+      * Irreversible data removal for GDPR compliance
 
 ## 13. Data Model (Conceptual)
 
@@ -202,21 +222,21 @@ Every report must contain all of the following sections:
 * authProvider
 * createdAt
 
-**Report**
-* reportId
-* userId
-* subject
-* country = UK
-* content
-* citations
-* createdAt
-* expiresAt
-* deletedAt (nullable; set when report soft deleted after 30 days)
+ **Report**
+  * reportId
+  * userId
+  * subject
+  * country = UK
+  * content (JSONB - structured 10 sections)
+  * citations (JSONB array - min 1 citation with url, title, accessedDate, relevantExcerpt)
+  * createdAt
+  * expiresAt
+  * deletedAt (nullable; set when report soft deleted after 30 days)
 
 **Payment**
 * paymentId
 * userId
-* amount (£2.99)
+* amount (configurable)
 * status
 * createdAt
 * reportId
@@ -285,8 +305,8 @@ Every report must contain all of the following sections:
 
 ## 16. Acceptance Criteria (Must Pass)
 1. User can authenticate using all supported methods
-2. User is charged £2.99 exactly once per query (production mode only)
-3. Failed payment results in no report (production mode only)
+2. User is charged £2.99 exactly once per query (production mode only; see Section 10)
+3. Failed payment results in no report (see Section 10)
 4. Successful payment produces a streamed report
 5. Reports are accessible for 30 days
 6. Reports cannot be accessed by other users
@@ -306,5 +326,4 @@ Every report must contain all of the following sections:
 * This system does not provide legal advice
 * This system does not guarantee employment
 * This system does not replace official government guidance
-* Hard deletion of reports (soft delete only in MVP)
 * Log aggregation service integration (file-based logging only)

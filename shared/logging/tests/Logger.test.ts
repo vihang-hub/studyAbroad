@@ -396,6 +396,9 @@ describe('Logger', () => {
     it('should handle log directory creation in nested paths', () => {
       const nestedLogDir = join(testLogDir, 'nested', 'deep', 'path');
 
+      // Ensure parent directory exists to avoid sandbox issues
+      mkdirSync(testLogDir, { recursive: true });
+
       const logger = Logger.getInstance({
         logDir: nestedLogDir,
       });

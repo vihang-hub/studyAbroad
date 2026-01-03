@@ -1,0 +1,53 @@
+{
+  "name": "@study-abroad/shared-feature-flags",
+  "version": "0.1.0",
+  "description": "Feature flag evaluation with React hooks for environment-based feature toggles",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src --ext .ts,.tsx",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "test:mutation": "stryker run",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@study-abroad/shared-config": "file:../config",
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "devDependencies": {
+    "@stryker-mutator/core": "^8.0.0",
+    "@stryker-mutator/typescript-checker": "^8.0.0",
+    "@stryker-mutator/vitest-runner": "^8.0.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^1.1.0",
+    "eslint": "^8.56.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-airbnb-typescript": "^17.1.0",
+    "happy-dom": "^20.0.11",
+    "jsdom": "^27.4.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.1.0"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  },
+  "keywords": [
+    "feature-flags",
+    "feature-toggles",
+    "environment",
+    "react-hooks"
+  ],
+  "license": "MIT"
+}

@@ -7,13 +7,13 @@ Equivalent to TypeScript logger.ts.
 
 import os
 import logging
-from logging.handlers import RotatingFileHandler
 from datetime import datetime
 import structlog
 from structlog.types import FilteringBoundLogger
 
 from logging_lib.correlation import get_correlation_id
 from logging_lib.sanitizer import sanitize_log_data
+from logging_lib.rotation import DateSequenceRotatingHandler
 
 
 def add_correlation_id(logger, method_name, event_dict):
@@ -78,14 +78,12 @@ def configure_logging() -> FilteringBoundLogger:
         console_handler.setLevel(config.LOG_LEVEL)
         handlers.append(console_handler)
 
-    # File handler with rotation
-    log_filename = os.path.join(config.LOG_DIR, f"app-{datetime.now().strftime('%Y-%m-%d')}-1.log")
-
-    # Hybrid rotation: size OR time-based
-    file_handler = RotatingFileHandler(
-        log_filename,
-        maxBytes=config.LOG_MAX_SIZE_MB * 1024 * 1024,
-        backupCount=config.LOG_RETENTION_DAYS,
+    # File handler with hybrid rotation (size OR time-based, date-sequence naming)
+    # T050a: Configure structlog with date-sequence file rotation
+    file_handler = DateSequenceRotatingHandler(
+        log_dir=config.LOG_DIR,
+        max_bytes=config.LOG_MAX_SIZE_MB * 1024 * 1024,
+        retention_days=config.LOG_RETENTION_DAYS,
     )
     file_handler.setLevel(config.LOG_LEVEL)
     handlers.append(file_handler)

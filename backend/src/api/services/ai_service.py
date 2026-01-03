@@ -4,12 +4,17 @@ Uses LangChain for orchestration with UK-specific prompts
 """
 
 import json
+import time
 from datetime import datetime
 from typing import AsyncIterator
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from src.config import settings
 from src.api.models.report import ReportContent, ReportSection, Citation
+from src.api.services.sla_monitor import get_sla_monitor
+from logging_lib.logger import get_logger
+
+logger = get_logger()
 
 # Initialize Gemini model
 llm = ChatGoogleGenerativeAI(
@@ -159,6 +164,20 @@ async def generate_report_stream(report_id: str, query: str) -> AsyncIterator[st
     - {"type": "complete", "report_id": "..."}
     - {"type": "error", "message": "..."}
     """
+    # T172a-b: Track streaming SLA metrics
+    start_time = time.time()
+    first_token_time: float | None = None
+    sla_monitor = get_sla_monitor()
+
+    logger.info(
+        "Report generation started",
+        {
+            "report_id": report_id,
+            "query": query,
+            "start_time": start_time,
+        }
+    )
+
     # Validate UK-only query
     if not is_uk_query(query):
         error_msg = (
@@ -197,6 +216,18 @@ Remember: UK-specific information only!"""
         async for chunk in llm_stream.astream(messages):
             content = chunk.content
             full_response += content
+
+            # T172b: Record first token time
+            if first_token_time is None and content:
+                first_token_time = time.time()
+                first_token_latency_ms = (first_token_time - start_time) * 1000
+                logger.info(
+                    "First token received",
+                    {
+                        "report_id": report_id,
+                        "first_token_latency_ms": round(first_token_latency_ms, 2),
+                    }
+                )
 
             # Yield raw chunk for progressive rendering
             # Note: This yields incremental text, not complete sections
@@ -258,17 +289,56 @@ Remember: UK-specific information only!"""
             # Store complete report (TODO: integrate with report_service)
             # await store_report(report_id, ReportContent(...))
 
+            # T172a: Record successful completion
+            completion_time = time.time()
+            sla_monitor.record_streaming_latency(
+                report_id=report_id,
+                start_time=start_time,
+                first_token_time=first_token_time,
+                completion_time=completion_time
+            )
+
+            logger.info(
+                "Report generation completed successfully",
+                {
+                    "report_id": report_id,
+                    "completion_time": completion_time,
+                    "total_latency_ms": round((completion_time - start_time) * 1000, 2),
+                }
+            )
+
         except json.JSONDecodeError as e:
+            completion_time = time.time()
+            sla_monitor.record_streaming_latency(
+                report_id=report_id,
+                start_time=start_time,
+                first_token_time=first_token_time,
+                completion_time=completion_time
+            )
             yield json.dumps(
                 {"type": "error", "message": f"Failed to parse AI response as JSON: {str(e)}"}
             )
             return
         except ValueError as e:
             # Pydantic validation error (wrong sections, missing citations, etc.)
+            completion_time = time.time()
+            sla_monitor.record_streaming_latency(
+                report_id=report_id,
+                start_time=start_time,
+                first_token_time=first_token_time,
+                completion_time=completion_time
+            )
             yield json.dumps({"type": "error", "message": f"Report validation failed: {str(e)}"})
             return
 
     except Exception as e:
+        completion_time = time.time()
+        sla_monitor.record_streaming_latency(
+            report_id=report_id,
+            start_time=start_time,
+            first_token_time=first_token_time,
+            completion_time=completion_time
+        )
         yield json.dumps({"type": "error", "message": f"Report generation failed: {str(e)}"})
         return
 
