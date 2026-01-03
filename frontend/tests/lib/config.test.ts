@@ -151,12 +151,35 @@ describe('config', () => {
       expect(config.ENVIRONMENT_MODE).toBe('test');
     });
 
-    it('should throw error if config not initialized', async () => {
+    it('should auto-initialize config if not initialized (lazy initialization)', async () => {
+      const mockConfig = createMockConfig();
+      mockConfigLoaderLoad.mockReturnValue(mockConfig);
+
       const { getConfig } = await import('../../src/lib/config');
 
-      expect(() => getConfig()).toThrow(
-        'Configuration not initialized. Call initializeConfig() first.'
-      );
+      // Should NOT throw - should auto-initialize instead
+      const config = getConfig();
+
+      expect(config).toBeDefined();
+      expect(config.ENVIRONMENT_MODE).toBe('test');
+      expect(mockConfigLoaderLoad).toHaveBeenCalled();
+    });
+
+    it('should not re-initialize if already initialized', async () => {
+      const mockConfig = createMockConfig();
+      mockConfigLoaderLoad.mockReturnValue(mockConfig);
+
+      const { initializeConfig, getConfig } = await import('../../src/lib/config');
+      initializeConfig();
+
+      // Clear call count after explicit init
+      mockConfigLoaderLoad.mockClear();
+
+      // getConfig should not call ConfigLoader.load again
+      const config = getConfig();
+
+      expect(config).toBeDefined();
+      expect(mockConfigLoaderLoad).not.toHaveBeenCalled();
     });
   });
 

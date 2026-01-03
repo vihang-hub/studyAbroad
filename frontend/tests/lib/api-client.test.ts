@@ -14,9 +14,13 @@ import {
 
 // Mock dependencies
 vi.mock('../../src/lib/config', () => ({
-  getConfig: vi.fn(() => ({
+  getClientConfig: vi.fn(() => ({
     apiUrl: 'http://localhost:8000',
-    environment: 'test',
+    mode: 'test',
+    enableSupabase: false,
+    enablePayments: false,
+    supabaseUrl: '',
+    supabaseAnonKey: '',
   })),
 }));
 

@@ -42,13 +42,16 @@ export function initializeConfig(): EnvironmentConfig {
 
 /**
  * Get the current configuration
- * Throws if configuration hasn't been initialized
+ * Uses lazy initialization - automatically initializes if not already done
+ * This ensures configuration works in both server and client contexts
  */
 export function getConfig(): EnvironmentConfig {
   if (!configInstance) {
-    throw new Error('Configuration not initialized. Call initializeConfig() first.');
+    // Lazy initialization: automatically initialize config if not already done
+    // This handles the case where client-side code runs before explicit initialization
+    initializeConfig();
   }
-  return configInstance;
+  return configInstance!;
 }
 
 /**
