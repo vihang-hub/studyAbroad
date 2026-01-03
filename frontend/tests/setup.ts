@@ -125,7 +125,6 @@ beforeAll(() => {
   dotenv.config({ path: resolve(__dirname, '../.env.test') });
 
   // Set required Next.js env vars for testing
-  process.env.NODE_ENV = 'test';
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_mock';
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_mock';
   process.env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';

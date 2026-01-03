@@ -15,10 +15,12 @@ export function ClerkWarning() {
     setIsMounted(true);
     // Only check client-accessible environment variables to avoid hydration mismatch
     const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || '';
-    const hasValidKey = publishableKey
+    const hasValidKey = Boolean(
+      publishableKey
       && !publishableKey.includes('YOUR_')
       && !publishableKey.includes('your_')
-      && publishableKey !== 'pk_test_your_clerk_publishable_key';
+      && publishableKey !== 'pk_test_your_clerk_publishable_key',
+    );
 
     setConfigured(hasValidKey);
   }, []);

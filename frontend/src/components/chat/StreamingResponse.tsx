@@ -2,12 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { ReportSection } from '@/components/reports/ReportSection';
-
-interface Citation {
-  title: string;
-  url: string;
-  snippet?: string;
-}
+import type { Citation } from '@/types/report';
 
 interface Section {
   section_num: number;

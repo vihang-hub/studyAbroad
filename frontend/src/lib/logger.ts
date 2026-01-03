@@ -47,7 +47,7 @@ export function initializeLogger(): BrowserLogger {
   // Simple console-based logger for browser
   loggerInstance = {
     debug: (message: string, metadata?: LogMetadata) => {
-      if (config.logLevel === 'debug' || isDevelopment()) {
+      if (config.LOG_LEVEL === 'debug' || isDevelopment()) {
         console.debug(`[DEBUG] ${message}`, metadata || {});
       }
     },
@@ -64,8 +64,8 @@ export function initializeLogger(): BrowserLogger {
 
   if (isDevelopment()) {
     console.log('[Logger] Logger initialized for browser environment', {
-      level: config.logLevel,
-      environment: config.mode,
+      level: config.LOG_LEVEL,
+      environment: config.ENVIRONMENT_MODE,
     });
   }
 

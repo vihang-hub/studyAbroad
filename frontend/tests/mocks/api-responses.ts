@@ -11,59 +11,85 @@ export const mockReports: Report[] = [
     id: 'report-1',
     userId: 'user-123',
     query: 'Computer Science in UK',
-    country: 'UK',
-    subject: 'Computer Science',
     status: 'completed',
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     expires_at: '2026-01-31T00:00:00Z',
     content: {
+      executiveSummary: 'A comprehensive guide to studying Computer Science in the UK',
+      summary: 'A comprehensive guide to studying Computer Science in the UK',
+      query: 'Computer Science in UK',
       total_citations: 5,
-      sections: {
-        overview: 'Overview of Computer Science programs in the UK',
-        universities: 'Top universities for Computer Science',
-        requirements: 'Entry requirements and application process',
+      generated_at: '2026-01-01T00:00:00Z',
+      sections: [
+        {
+          title: 'Overview',
+          heading: 'Overview',
+          content: 'Overview of Computer Science programs in the UK',
+        },
+        {
+          title: 'Top Universities',
+          heading: 'Top Universities',
+          content: 'Top universities for Computer Science',
+        },
+        {
+          title: 'Requirements',
+          heading: 'Entry Requirements',
+          content: 'Entry requirements and application process',
+        },
+      ],
+      citations: [
+        {
+          id: 'cite-1',
+          url: 'https://example.com/source1',
+          title: 'UK University Guide',
+          accessedAt: '2026-01-01T00:00:00Z',
+        },
+      ],
+      actionPlan: {
+        steps: [],
+        timeline: '6-12 months',
+        resources: [],
       },
     },
-    citations: [
-      {
-        id: 'cite-1',
-        url: 'https://example.com/source1',
-        title: 'UK University Guide',
-        accessed_at: '2026-01-01T00:00:00Z',
-      },
-    ],
   },
   {
     id: 'report-2',
     userId: 'user-123',
     query: 'Nursing in UK',
-    country: 'UK',
-    subject: 'Nursing',
     status: 'completed',
     createdAt: '2026-01-02T00:00:00Z',
     updatedAt: '2026-01-02T00:00:00Z',
     expires_at: '2026-02-01T00:00:00Z',
     content: {
+      executiveSummary: 'A guide to studying Nursing in the UK',
+      summary: 'A guide to studying Nursing in the UK',
+      query: 'Nursing in UK',
       total_citations: 3,
-      sections: {
-        overview: 'Overview of Nursing programs in the UK',
+      generated_at: '2026-01-02T00:00:00Z',
+      sections: [
+        {
+          title: 'Overview',
+          heading: 'Overview',
+          content: 'Overview of Nursing programs in the UK',
+        },
+      ],
+      citations: [],
+      actionPlan: {
+        steps: [],
+        timeline: '6-12 months',
+        resources: [],
       },
     },
-    citations: [],
   },
   {
     id: 'report-3',
     userId: 'user-123',
     query: 'Business Management in UK',
-    country: 'UK',
-    subject: 'Business Management',
     status: 'generating',
     createdAt: '2026-01-03T00:00:00Z',
     updatedAt: '2026-01-03T00:00:00Z',
     expires_at: '2026-02-02T00:00:00Z',
-    content: { sections: {} },
-    citations: [],
   },
 ];
 
@@ -169,7 +195,7 @@ export const createMockFetch = () => {
 
 // Setup global fetch mock
 export function setupFetchMock(): void {
-  global.fetch = createMockFetch();
+  global.fetch = createMockFetch() as unknown as typeof global.fetch;
 }
 
 // Reset fetch mock

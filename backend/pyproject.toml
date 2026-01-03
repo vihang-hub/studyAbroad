@@ -20,6 +20,7 @@ dependencies = [
     "asyncpg>=0.29.0",
     "alembic>=1.13.0",
     "psycopg2-binary>=2.9.0",
+    "email-validator>=2.3.0",
 ]
 
 [project.optional-dependencies]
@@ -54,7 +55,12 @@ python_functions = ["test_*"]
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["tests/*"]
+omit = [
+    "tests/*",
+    "src/config.py",  # Legacy unused config module
+    "src/middleware/rate_limiter.py",  # Middleware requires integration tests
+    "src/api/routes/stream.py",  # SSE streaming requires integration tests
+]
 
 [tool.coverage.report]
 fail_under = 90

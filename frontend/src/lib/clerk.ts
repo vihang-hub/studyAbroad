@@ -11,8 +11,8 @@ import { getConfig } from './config';
 export function getClerkConfig() {
   const config = getConfig();
   return {
-    publishableKey: config.clerkPublishableKey,
-    secretKey: config.clerkSecretKey,
+    publishableKey: config.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    secretKey: config.CLERK_SECRET_KEY,
   };
 }
 

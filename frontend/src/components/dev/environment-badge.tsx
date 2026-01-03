@@ -18,13 +18,13 @@ export function EnvironmentBadge() {
     return null;
   }
 
-  const envColors = {
-    development: 'bg-green-600',
+  const envColors: Record<string, string> = {
+    dev: 'bg-green-600',
     test: 'bg-yellow-600',
     production: 'bg-red-600',
   };
 
-  const badgeColor = envColors[environmentMode];
+  const badgeColor = envColors[environmentMode] || 'bg-gray-600';
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
@@ -104,7 +104,7 @@ export function EnvironmentBadge() {
             </div>
           </div>
 
-          {environmentMode === 'development' && (
+          {environmentMode === 'dev' && (
             <div className="mt-3 rounded bg-blue-50 p-2 text-xs text-blue-800">
               <strong>Dev Mode:</strong>
               {' '}

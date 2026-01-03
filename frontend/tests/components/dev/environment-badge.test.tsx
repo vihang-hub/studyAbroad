@@ -40,7 +40,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: {},
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: true,
       });
 
@@ -54,14 +54,14 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: true, ENABLE_PAYMENTS: false },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
       const { EnvironmentBadge } = await import('../../../src/components/dev/environment-badge');
       render(<EnvironmentBadge />);
 
-      expect(screen.getByText('DEVELOPMENT')).toBeInTheDocument();
+      expect(screen.getByText('DEV')).toBeInTheDocument();
     });
 
     it('should render in test environment', async () => {
@@ -84,7 +84,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: true },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -99,7 +99,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: {},
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -131,7 +131,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: true, ENABLE_PAYMENTS: false },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -148,7 +148,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: true },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -172,7 +172,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: true, ENABLE_PAYMENTS: false, ENABLE_RAG: true },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
     });
@@ -222,7 +222,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: true },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -258,7 +258,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: { ENABLE_SUPABASE: false, ENABLE_PAYMENTS: false },
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -292,7 +292,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: {},
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 
@@ -307,7 +307,7 @@ describe('EnvironmentBadge', () => {
       const { useFeatureFlags } = await import('../../../src/providers/feature-flag-provider');
       (useFeatureFlags as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
         flags: {},
-        environmentMode: 'development',
+        environmentMode: 'dev',
         isLoading: false,
       });
 

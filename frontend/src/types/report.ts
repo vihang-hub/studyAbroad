@@ -37,10 +37,10 @@ export interface ReportSection {
 }
 
 export interface Citation {
-  id: string;
+  id?: string;
   title: string;
   url: string;
-  accessedAt: string;
+  accessedAt?: string;
   snippet?: string;
 }
 

@@ -17,7 +17,6 @@ import {
   type EnvironmentMode,
   Feature,
 } from '@study-abroad/shared-feature-flags';
-import { getConfig } from '@/lib/config';
 import { logInfo } from '@/lib/logger';
 
 interface FeatureFlagContextType {
@@ -39,34 +38,27 @@ interface FeatureFlagProviderProps {
  */
 export function FeatureFlagProvider({ children }: FeatureFlagProviderProps) {
   const [flags, setFlags] = useState<FeatureFlagState>({
-    ENABLE_SUPABASE: false,
-    ENABLE_PAYMENTS: false,
+    [Feature.SUPABASE]: false,
+    [Feature.PAYMENTS]: false,
+    [Feature.RATE_LIMITING]: true,
+    [Feature.OBSERVABILITY]: false,
   });
-  const [environmentMode, setEnvironmentMode] = useState<EnvironmentMode>('development');
+  const [environmentMode, setEnvironmentMode] = useState<EnvironmentMode>('dev');
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     try {
-      // Get configuration
-      const config = getConfig();
+      // Get environment mode from singleton
+      const mode = FeatureFlags.getEnvironmentMode();
+      setEnvironmentMode(mode);
 
-      // Initialize feature flags
-      const featureFlags = new FeatureFlags(config.mode);
-
-      // Set environment mode
-      setEnvironmentMode(config.mode);
-
-      // Evaluate all feature flags
-      const evaluatedFlags: FeatureFlagState = {
-        ENABLE_SUPABASE: featureFlags.isEnabled('ENABLE_SUPABASE'),
-        ENABLE_PAYMENTS: featureFlags.isEnabled('ENABLE_PAYMENTS'),
-      };
-
+      // Get all feature flags from singleton
+      const evaluatedFlags = FeatureFlags.getAllFlags();
       setFlags(evaluatedFlags);
 
       // Log feature flag initialization
       logInfo('Feature flags initialized', {
-        environmentMode: config.mode,
+        environmentMode: mode,
         flags: evaluatedFlags,
       });
     } catch (error) {

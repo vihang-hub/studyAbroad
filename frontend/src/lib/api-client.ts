@@ -3,7 +3,7 @@
  * Enhanced with correlation IDs, logging, and error handling
  */
 
-import { getConfig } from './config';
+import { getClientConfig } from './config';
 import {
   logApiRequest,
   logApiResponse,
@@ -36,7 +36,7 @@ export async function fetchApi<T = unknown>(
   endpoint: string,
   options: FetchOptions = {},
 ): Promise<ApiResponse<T>> {
-  const config = getConfig();
+  const config = getClientConfig();
   const url = `${config.apiUrl}${endpoint}`;
   const method = options.method || 'GET';
 
@@ -182,7 +182,7 @@ export const api = {
  * Get API configuration
  */
 export function getApiConfig() {
-  const config = getConfig();
+  const config = getClientConfig();
   return {
     apiUrl: config.apiUrl,
     timeout: 30000, // 30 seconds default
