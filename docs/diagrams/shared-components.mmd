@@ -1,0 +1,72 @@
+```mermaid
+graph TD
+    subgraph Frontend["Frontend (Next.js)"]
+        FrontendApp[Next.js App]
+    end
+
+    subgraph Backend["Backend (FastAPI)"]
+        BackendApp[FastAPI App]
+    end
+
+    subgraph SharedPackages["Shared Packages (@study-abroad/shared-*)"]
+        Config["@study-abroad/shared-config<br/>Environment Configuration<br/>Zod Schema Validation"]
+        FeatureFlags["@study-abroad/shared-feature-flags<br/>Feature Flag Evaluation<br/>ENABLE_SUPABASE, ENABLE_PAYMENTS"]
+        Database["@study-abroad/shared-database<br/>Repository Pattern<br/>Supabase/PostgreSQL Adapter"]
+        Logging["@study-abroad/shared-logging<br/>Winston Logger<br/>Correlation IDs, Rotation"]
+        Auth["@study-abroad/shared-auth<br/>Clerk Integration<br/>Auth Hooks & Components"]
+        Payments["@study-abroad/shared-payments<br/>Stripe Integration<br/>Payment Hooks & Components"]
+        Types["@study-abroad/shared-types<br/>TypeScript Definitions<br/>User, Report, Payment"]
+        UI["@study-abroad/shared-ui<br/>React Components<br/>shadcn/ui extensions"]
+    end
+
+    subgraph PythonEquivalents["Python Equivalents (backend/)"]
+        PyConfig["config.py<br/>Pydantic Settings"]
+        PyFeatureFlags["feature_flags.py<br/>Feature Flag Evaluator"]
+        PyDatabase["database/<br/>Repository Pattern<br/>asyncpg/Supabase"]
+        PyLogging["logging_config.py<br/>structlog"]
+    end
+
+    FrontendApp --> Config
+    FrontendApp --> FeatureFlags
+    FrontendApp --> Database
+    FrontendApp --> Logging
+    FrontendApp --> Auth
+    FrontendApp --> Payments
+    FrontendApp --> Types
+    FrontendApp --> UI
+
+    BackendApp --> PyConfig
+    BackendApp --> PyFeatureFlags
+    BackendApp --> PyDatabase
+    BackendApp --> PyLogging
+
+    FeatureFlags --> Config
+    Database --> Config
+    Database --> FeatureFlags
+    Logging --> Config
+    Auth --> Config
+    Payments --> Config
+
+    PyFeatureFlags -.implements pattern.-> FeatureFlags
+    PyDatabase -.implements pattern.-> Database
+    PyLogging -.implements pattern.-> Logging
+    PyConfig -.implements pattern.-> Config
+
+    style Config fill:#4CAF50,color:#fff
+    style FeatureFlags fill:#2196F3,color:#fff
+    style Database fill:#FF9800,color:#fff
+    style Logging fill:#9C27B0,color:#fff
+    style Auth fill:#F44336,color:#fff
+    style Payments fill:#00BCD4,color:#fff
+
+    style PyConfig fill:#4CAF50,stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
+    style PyFeatureFlags fill:#2196F3,stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
+    style PyDatabase fill:#FF9800,stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
+    style PyLogging fill:#9C27B0,stroke:#000,stroke-width:2px,stroke-dasharray: 5 5
+
+    %% Dependency Order (bottom-up)
+    note1[Base Layer: Config]
+    note2[Infrastructure Layer: FeatureFlags, Logging]
+    note3[Data Layer: Database]
+    note4[Application Layer: Auth, Payments, UI]
+```

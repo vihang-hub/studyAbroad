@@ -1,0 +1,99 @@
+%% Report Generation Flow
+%% Shows the complete process from user input to saved report
+
+flowchart TD
+    Start([User on /chat page]) --> InputSubject[User enters subject]
+    InputSubject --> SubmitQuery[Click Generate Report]
+
+    SubmitQuery --> ValidateInput{Input valid?}
+    ValidateInput -->|No| ShowValidationError[Show validation error]
+    ShowValidationError --> InputSubject
+
+    ValidateInput -->|Yes| CheckAuth{User authenticated?}
+    CheckAuth -->|No| RedirectSignIn[Redirect to /sign-in]
+    RedirectSignIn --> InputSubject
+
+    CheckAuth -->|Yes| CheckEnv{Environment mode?}
+
+    %% Dev/Test Path (No Payment)
+    CheckEnv -->|dev/test| LogPaymentBypass[Log: Payment bypassed]
+    LogPaymentBypass --> CreatePaymentRecord[Create payment record<br/>status: bypassed]
+    CreatePaymentRecord --> InitiateGeneration
+
+    %% Production Path (Payment Required)
+    CheckEnv -->|production| CheckPaymentFlag{ENABLE_PAYMENTS?}
+    CheckPaymentFlag -->|false| LogPaymentBypass
+    CheckPaymentFlag -->|true| CreatePaymentIntent[POST /api/payments]
+
+    CreatePaymentIntent --> PaymentIntentCreated[Stripe PaymentIntent created]
+    PaymentIntentCreated --> ShowPaymentUI[Show Stripe payment UI]
+
+    ShowPaymentUI --> UserEntersCard[User enters card details]
+    UserEntersCard --> SubmitPayment[Submit payment]
+
+    SubmitPayment --> ProcessPayment{Payment status?}
+    ProcessPayment -->|Failed| PaymentError[Show payment error]
+    ProcessPayment -->|Canceled| PaymentCanceled[User canceled payment]
+    PaymentError --> ShowPaymentUI
+    PaymentCanceled --> InputSubject
+
+    ProcessPayment -->|Succeeded| PaymentSucceeded[Payment succeeded]
+    PaymentSucceeded --> UpdatePaymentStatus[Update payment status]
+    UpdatePaymentStatus --> InitiateGeneration[POST /api/reports]
+
+    %% Report Generation
+    InitiateGeneration --> CreateReportRecord[Create report record<br/>status: generating]
+    CreateReportRecord --> ReturnStreamURL[Return reportId + streamUrl]
+    ReturnStreamURL --> ConnectSSE[Connect to SSE endpoint<br/>GET /api/reports/:id/stream]
+
+    ConnectSSE --> SSEConnected[SSE connection established]
+    SSEConnected --> StartGeneration[Backend calls Gemini API]
+
+    StartGeneration --> SendStartEvent[SSE: event=start<br/>data: reportId, status]
+    SendStartEvent --> ShowGeneratingUI[Show Streaming UI]
+
+    ShowGeneratingUI --> StreamLoop{Generation in progress}
+
+    StreamLoop -->|Generating| ReceiveChunk[SSE: event=chunk<br/>data: section, content]
+    ReceiveChunk --> RenderChunk[Render content incrementally]
+    RenderChunk --> StreamLoop
+
+    StreamLoop -->|Citation added| ReceiveCitation[SSE: event=citation<br/>data: source, url, confidence]
+    ReceiveCitation --> RenderCitation[Render citation]
+    RenderCitation --> StreamLoop
+
+    StreamLoop -->|Completed| ReceiveComplete[SSE: event=complete<br/>data: reportId, status]
+    ReceiveComplete --> UpdateReportStatus[Update report status: completed]
+    UpdateReportStatus --> SaveToDatabase[Save content + citations to DB]
+    SaveToDatabase --> SetExpiresAt[Set expires_at = now + 30 days]
+    SetExpiresAt --> CloseSSE[Close SSE connection]
+    CloseSSE --> ShowCompleteUI[Show completion message]
+    ShowCompleteUI --> End([Report saved and accessible])
+
+    StreamLoop -->|Error| ReceiveError[SSE: event=error<br/>data: error details]
+    ReceiveError --> UpdateReportFailed[Update report status: failed]
+    UpdateReportFailed --> LogError[Log error with correlationId]
+    LogError --> ShowErrorUI[Show error message<br/>with correlationId]
+    ShowErrorUI --> RetryOption{User action?}
+    RetryOption -->|Retry| InputSubject
+    RetryOption -->|Cancel| ChatPage([Return to /chat])
+
+    %% Error Handling at Each Step
+    CreateReportRecord -.->|Database error| HandleDBError[Handle database error]
+    StartGeneration -.->|Gemini API timeout| HandleTimeoutError[Handle timeout error]
+    StartGeneration -.->|Gemini API error| HandleAPIError[Handle API error]
+
+    HandleDBError --> ShowErrorUI
+    HandleTimeoutError --> ShowErrorUI
+    HandleAPIError --> ShowErrorUI
+
+    %% Styling
+    classDef errorState fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    classDef successState fill:#ccffcc,stroke:#00cc00,stroke-width:2px
+    classDef processState fill:#cce5ff,stroke:#0066cc,stroke-width:2px
+    classDef paymentState fill:#fff4cc,stroke:#ff9900,stroke-width:2px
+
+    class ShowValidationError,PaymentError,PaymentCanceled,ReceiveError,ShowErrorUI,HandleDBError,HandleTimeoutError,HandleAPIError errorState
+    class PaymentSucceeded,ShowCompleteUI,End successState
+    class CreateReportRecord,StartGeneration,SaveToDatabase processState
+    class CreatePaymentIntent,ShowPaymentUI,ProcessPayment paymentState

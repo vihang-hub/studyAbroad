@@ -1,0 +1,46 @@
+    ```mermaid
+graph TD
+    Start[Application Startup] --> LoadConfig[Load Environment Variables]
+    LoadConfig --> CheckEnv{ENVIRONMENT_MODE?}
+
+    CheckEnv -->|dev| DevMode[Development Mode]
+    CheckEnv -->|test| TestMode[Test Mode]
+    CheckEnv -->|production| ProdMode[Production Mode]
+
+    DevMode --> DevDB[Local PostgreSQL<br/>localhost:5432]
+    DevMode --> DevPayments[Payments DISABLED<br/>ENABLE_PAYMENTS=false]
+    DevMode --> DevLogs[Debug Logging<br/>LOG_LEVEL=debug]
+    DevMode --> DevFeatures[Supabase DISABLED<br/>ENABLE_SUPABASE=false]
+
+    TestMode --> TestDB[Supabase PostgreSQL<br/>Remote Database]
+    TestMode --> TestPayments[Payments DISABLED<br/>ENABLE_PAYMENTS=false]
+    TestMode --> TestLogs[Debug Logging<br/>LOG_LEVEL=debug]
+    TestMode --> TestFeatures[Supabase ENABLED<br/>ENABLE_SUPABASE=true]
+
+    ProdMode --> ProdDB[Supabase PostgreSQL<br/>Production Database]
+    ProdMode --> ProdPayments[Payments ENABLED<br/>ENABLE_PAYMENTS=true]
+    ProdMode --> ProdLogs[Error Logging<br/>LOG_LEVEL=error]
+    ProdMode --> ProdFeatures[Supabase ENABLED<br/>ENABLE_SUPABASE=true]
+
+    DevDB --> AppReady[Application Ready]
+    DevPayments --> AppReady
+    DevLogs --> AppReady
+    DevFeatures --> AppReady
+
+    TestDB --> AppReady
+    TestPayments --> AppReady
+    TestLogs --> AppReady
+    TestFeatures --> AppReady
+
+    ProdDB --> AppReady
+    ProdPayments --> AppReady
+    ProdLogs --> AppReady
+    ProdFeatures --> AppReady
+
+    AppReady --> ServeRequests[Serve User Requests]
+
+    style DevMode fill:#90EE90
+    style TestMode fill:#FFD700
+    style ProdMode fill:#FF6B6B
+    style AppReady fill:#87CEEB
+```

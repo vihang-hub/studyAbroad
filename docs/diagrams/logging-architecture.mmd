@@ -1,0 +1,67 @@
+```mermaid
+graph TB
+    subgraph Application["Application Layer"]
+        API[API Route Handler]
+        Service[Service Layer]
+        Middleware[Logging Middleware]
+    end
+
+    subgraph LoggingInfra["Logging Infrastructure (@study-abroad/shared-logging)"]
+        Logger[ApplicationLogger]
+        Correlation[Correlation ID Manager]
+        Sanitizer[Sensitive Data Sanitizer]
+        Formatter{Environment?}
+    end
+
+    subgraph Transports["Log Transports"]
+        Console[Console Transport<br/>stdout/stderr]
+        FileTransport[File Transport<br/>Winston DailyRotateFile]
+    end
+
+    subgraph Storage["Log Storage"]
+        LogDir[Log Directory<br/>/logs/]
+        LogFile1[app-2025-12-31-1.log]
+        LogFile2[app-2025-12-31-2.log]
+        LogFile3[app-2026-01-01-1.log]
+    end
+
+    subgraph Rotation["Log Rotation & Retention"]
+        RotationCheck{Size ≥ 100MB<br/>OR Day Changed?}
+        CreateNew[Create New Log File<br/>Increment Sequence]
+        CleanupJob[Daily Cleanup Job<br/>Delete logs > 30 days]
+    end
+
+    Middleware --> Logger
+    API --> Logger
+    Service --> Logger
+
+    Logger --> Correlation
+    Correlation --> |Add requestId| Sanitizer
+    Sanitizer --> |Redact sensitive fields| Formatter
+
+    Formatter --> |dev| PrettyFormat[Pretty Print]
+    Formatter --> |test| PrettyFormat
+    Formatter --> |production| JSONFormat[JSON Format]
+
+    PrettyFormat --> Console
+    PrettyFormat --> FileTransport
+    JSONFormat --> Console
+    JSONFormat --> FileTransport
+
+    FileTransport --> LogDir
+    LogDir --> LogFile1
+    LogDir --> LogFile2
+    LogDir --> LogFile3
+
+    LogFile1 --> RotationCheck
+    RotationCheck --> |Yes| CreateNew
+    CreateNew --> LogFile2
+
+    LogDir --> CleanupJob
+    CleanupJob --> |Delete old files| Deleted[Deleted Logs]
+
+    style Logger fill:#4CAF50
+    style Sanitizer fill:#FF9800
+    style RotationCheck fill:#2196F3
+    style CleanupJob fill:#9C27B0
+```

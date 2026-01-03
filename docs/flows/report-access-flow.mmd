@@ -1,0 +1,86 @@
+%% Report Access Flow
+%% Shows how users access, view, and manage their reports
+
+flowchart TD
+    Start([User on /chat page]) --> ViewReports[Click view past reports]
+
+    ViewReports --> FetchReports[GET /api/reports?limit=50&offset=0]
+    FetchReports --> QueryDatabase[Query: SELECT * FROM reports<br/>WHERE user_id = $1<br/>AND deleted_at IS NULL]
+
+    QueryDatabase --> CheckResults{Reports found?}
+    CheckResults -->|No| EmptyState[Show empty state<br/>No reports yet]
+    EmptyState --> CreateFirstReport[Prompt: Create your first report]
+    CreateFirstReport --> End1([Return to input])
+
+    CheckResults -->|Yes| RenderList[Render report list<br/>sorted by created_at DESC]
+    RenderList --> ShowReportCards[Show report cards with:<br/>- Subject<br/>- Created date<br/>- Expires date<br/>- Status]
+
+    ShowReportCards --> UserAction{User action}
+
+    %% View Report
+    UserAction -->|Click report| SelectReport[GET /api/reports/:reportId]
+    SelectReport --> QueryReport[Query: SELECT * FROM reports<br/>WHERE report_id = $1<br/>AND user_id = $2<br/>AND deleted_at IS NULL]
+
+    QueryReport --> CheckReportExists{Report exists?}
+    CheckReportExists -->|No| NotFoundError[404 Not Found<br/>Report deleted or doesn't exist]
+    NotFoundError --> ShowError[Show error message]
+    ShowError --> ViewReports
+
+    CheckReportExists -->|Yes| CheckExpiration{expiresAt < NOW?}
+    CheckExpiration -->|Yes| ExpiredReport[Report expired<br/>Will be soft deleted]
+    ExpiredReport --> SoftDeleteReport[Background job sets<br/>deleted_at = NOW]
+    SoftDeleteReport --> NotFoundError
+
+    CheckExpiration -->|No| CheckOwnership{user_id matches?}
+    CheckOwnership -->|No| ForbiddenError[403 Forbidden<br/>Not your report]
+    ForbiddenError --> ShowError
+
+    CheckOwnership -->|Yes| RenderReport[Render full report content]
+    RenderReport --> ShowSections[Display all sections:<br/>1. Executive Summary<br/>2. Study Options<br/>3. Estimated Costs<br/>4. Visa Overview<br/>5. Post-Study Work<br/>6. Job Prospects<br/>7. Fallback Jobs<br/>8. Risks<br/>9. Action Plan<br/>10. Citations]
+
+    ShowSections --> ShowCitations[Render citations with:<br/>- Source name<br/>- URL link<br/>- Confidence score]
+
+    ShowCitations --> ShowExpiration[Show expiration warning if<br/>expiresAt - NOW < 7 days]
+    ShowExpiration --> ReportActions{User action}
+
+    ReportActions -->|Download PDF| GeneratePDF[Generate PDF version]
+    GeneratePDF --> DownloadFile[Download report.pdf]
+    DownloadFile --> ReportActions
+
+    ReportActions -->|Share link| CopyLink[Copy report URL]
+    CopyLink --> ReportActions
+
+    ReportActions -->|Delete| ConfirmDelete{Confirm deletion?}
+    ConfirmDelete -->|No| ReportActions
+    ConfirmDelete -->|Yes| DeleteReport[DELETE /api/reports/:reportId]
+
+    DeleteReport --> SoftDelete[UPDATE reports<br/>SET deleted_at = NOW<br/>WHERE report_id = $1]
+    SoftDelete --> LogDeletion[Log deletion event]
+    LogDeletion --> ShowDeleteSuccess[Show: Report deleted]
+    ShowDeleteSuccess --> ViewReports
+
+    ReportActions -->|Back to list| ViewReports
+    ReportActions -->|Close| End2([Return to /chat])
+
+    %% Pagination
+    UserAction -->|Load more| CheckPagination{More reports?}
+    CheckPagination -->|Yes| LoadMore[GET /api/reports?offset=n]
+    LoadMore --> QueryDatabase
+    CheckPagination -->|No| EndOfList[End of list]
+    EndOfList --> ShowReportCards
+
+    %% Background: 30-Day Expiration Job
+    BackgroundJob[Background Job<br/>Runs daily at 1 AM] -.->|Cron schedule| FindExpired[Query: SELECT * FROM reports<br/>WHERE expires_at < NOW<br/>AND deleted_at IS NULL]
+    FindExpired -.-> SoftDeleteExpired[UPDATE reports<br/>SET deleted_at = NOW]
+    SoftDeleteExpired -.-> LogExpiration[Log: Soft deleted N reports]
+
+    %% Styling
+    classDef errorState fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    classDef successState fill:#ccffcc,stroke:#00cc00,stroke-width:2px
+    classDef processState fill:#cce5ff,stroke:#0066cc,stroke-width:2px
+    classDef warningState fill:#fff4cc,stroke:#ff9900,stroke-width:2px
+
+    class NotFoundError,ForbiddenError,ShowError errorState
+    class RenderReport,ShowSections,ShowDeleteSuccess successState
+    class QueryDatabase,QueryReport,SoftDelete processState
+    class ExpiredReport,ShowExpiration warningState

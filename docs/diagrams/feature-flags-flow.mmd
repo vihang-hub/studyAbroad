@@ -1,0 +1,47 @@
+```mermaid
+sequenceDiagram
+    participant User
+    participant API as API Route
+    participant Flags as FeatureFlagEvaluator
+    participant Config as ConfigLoader
+    participant Service as Service Layer
+    participant DB as Database
+    participant Payment as Payment Gateway
+    participant Logger as Logger
+
+    User->>API: POST /api/reports
+    API->>Flags: isEnabled(Feature.PAYMENTS)
+    Flags->>Config: load()
+    Config-->>Flags: { ENABLE_PAYMENTS: true }
+    Flags->>Logger: log('feature_flag_evaluated', {feature: 'ENABLE_PAYMENTS', enabled: true})
+    Flags-->>API: true
+
+    alt Payments Enabled (Production)
+        API->>Payment: createPaymentIntent(£2.99)
+        Payment-->>API: paymentIntent
+        API-->>User: { requiresPayment: true, clientSecret: '...' }
+        User->>Payment: confirmPayment(clientSecret)
+        Payment-->>User: paymentSucceeded
+        User->>API: POST /api/reports (with paymentIntentId)
+        API->>Service: generateReport(userId, subject)
+    else Payments Disabled (Dev/Test)
+        API->>Logger: log('payments_disabled_bypassing')
+        API->>Service: generateReport(userId, subject)
+    end
+
+    Service->>Flags: isEnabled(Feature.SUPABASE)
+    Flags->>Logger: log('feature_flag_evaluated', {feature: 'ENABLE_SUPABASE', enabled: true})
+    Flags-->>Service: true
+
+    alt Supabase Enabled (Test/Production)
+        Service->>DB: SupabaseAdapter.query(INSERT INTO reports...)
+    else Supabase Disabled (Dev)
+        Service->>DB: PostgresAdapter.query(INSERT INTO reports...)
+    end
+
+    DB-->>Service: report created
+    Service-->>API: report
+    API-->>User: { report }
+
+    Note over Flags,Logger: All feature flag evaluations<br/>are logged for auditability
+```

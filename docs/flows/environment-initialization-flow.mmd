@@ -1,0 +1,141 @@
+%% Environment Initialization Flow
+%% Shows application startup and configuration validation
+
+flowchart TD
+    Start([Application Start]) --> LoadEnv[Load .env file]
+    LoadEnv --> ReadVars[Read environment variables]
+
+    ReadVars --> ValidateConfig[Validate configuration<br/>using Zod/Pydantic]
+    ValidateConfig --> CheckRequired{All required vars present?}
+
+    CheckRequired -->|No| ListMissing[List missing variables]
+    ListMissing --> LogMissingVars[Log error with missing vars]
+    LogMissingVars --> FailFast[FAIL FAST<br/>Exit with error code 1]
+    FailFast --> End1([Application not started])
+
+    CheckRequired -->|Yes| ValidateSchema{Schema valid?}
+    ValidateSchema -->|No| LogSchemaErrors[Log validation errors]
+    LogSchemaErrors --> FailFast
+
+    ValidateSchema -->|Yes| DetermineEnv{ENVIRONMENT_MODE?}
+
+    %% Dev Mode Initialization
+    DetermineEnv -->|dev| DevMode[Environment: dev]
+    DevMode --> ValidateDevConfig{Dev config valid?}
+    ValidateDevConfig -->|No| DevConfigError[Error: Invalid dev config<br/>ENABLE_SUPABASE must be false<br/>ENABLE_PAYMENTS must be false]
+    DevConfigError --> FailFast
+
+    ValidateDevConfig -->|Yes| SetDevSettings[Set dev settings:<br/>- LOG_LEVEL=debug<br/>- LOG_PRETTY_PRINT=true<br/>- ENABLE_SUPABASE=false<br/>- ENABLE_PAYMENTS=false]
+    SetDevSettings --> InitDevDatabase[Initialize PostgreSQL<br/>Connection: localhost:5432]
+    InitDevDatabase --> DevDBCheck{PostgreSQL running?}
+    DevDBCheck -->|No| DevDBError[Error: PostgreSQL not running<br/>Start PostgreSQL locally]
+    DevDBError --> FailFast
+    DevDBCheck -->|Yes| DevDBConnected[PostgreSQL connected]
+    DevDBConnected --> RunMigrations
+
+    %% Test Mode Initialization
+    DetermineEnv -->|test| TestMode[Environment: test]
+    TestMode --> ValidateTestConfig{Test config valid?}
+    ValidateTestConfig -->|No| TestConfigError[Error: Invalid test config<br/>ENABLE_SUPABASE must be true<br/>ENABLE_PAYMENTS must be false]
+    TestConfigError --> FailFast
+
+    ValidateTestConfig -->|Yes| SetTestSettings[Set test settings:<br/>- LOG_LEVEL=debug<br/>- ENABLE_SUPABASE=true<br/>- ENABLE_PAYMENTS=false]
+    SetTestSettings --> CheckSupabaseURL{SUPABASE_URL present?}
+    CheckSupabaseURL -->|No| SupabaseConfigError[Error: Supabase config missing]
+    SupabaseConfigError --> FailFast
+    CheckSupabaseURL -->|Yes| InitSupabase[Initialize Supabase client]
+    InitSupabase --> TestDBCheck{Supabase reachable?}
+    TestDBCheck -->|No| TestDBError[Error: Supabase connection failed]
+    TestDBError --> FailFast
+    TestDBCheck -->|Yes| SupabaseConnected[Supabase connected]
+    SupabaseConnected --> RunMigrations
+
+    %% Production Mode Initialization
+    DetermineEnv -->|production| ProdMode[Environment: production]
+    ProdMode --> ValidateProdConfig{Prod config valid?}
+    ValidateProdConfig -->|No| ProdConfigError[Error: Invalid prod config<br/>ENABLE_SUPABASE must be true<br/>ENABLE_PAYMENTS must be true]
+    ProdConfigError --> FailFast
+
+    ValidateProdConfig -->|Yes| SetProdSettings[Set prod settings:<br/>- LOG_LEVEL=error<br/>- LOG_CONSOLE_ENABLED=false<br/>- ENABLE_SUPABASE=true<br/>- ENABLE_PAYMENTS=true]
+    SetProdSettings --> CheckSecrets{All secrets present?}
+    CheckSecrets -->|No| SecretsError[Error: Missing secrets<br/>- STRIPE_SECRET_KEY<br/>- GEMINI_API_KEY<br/>- etc.]
+    SecretsError --> FailFast
+
+    CheckSecrets -->|Yes| LoadSecretsFromGSM[Load secrets from<br/>Google Secret Manager]
+    LoadSecretsFromGSM --> InitProdSupabase[Initialize Supabase client]
+    InitProdSupabase --> ProdDBCheck{Supabase reachable?}
+    ProdDBCheck -->|No| ProdDBError[Error: Supabase connection failed]
+    ProdDBError --> FailFast
+    ProdDBCheck -->|Yes| ProdSupabaseConnected[Supabase connected]
+    ProdSupabaseConnected --> RunMigrations
+
+    %% Database Migrations
+    RunMigrations[Run database migrations] --> CheckMigrations{Migrations applied?}
+    CheckMigrations -->|Failed| MigrationError[Error: Migration failed]
+    MigrationError --> RollbackMigration[Rollback migration]
+    RollbackMigration --> FailFast
+
+    CheckMigrations -->|Success| LogMigrations[Log: Migrations completed]
+    LogMigrations --> InitFeatureFlags[Initialize feature flags]
+
+    %% Feature Flags Setup
+    InitFeatureFlags --> EvaluateFlags[Evaluate feature flags:<br/>- ENABLE_SUPABASE<br/>- ENABLE_PAYMENTS]
+    EvaluateFlags --> LogFlagState[Log feature flag states]
+
+    LogFlagState --> CheckSupabaseFlag{ENABLE_SUPABASE?}
+    CheckSupabaseFlag -->|true| UseSupabase[Database: Supabase]
+    CheckSupabaseFlag -->|false| UsePostgres[Database: PostgreSQL]
+
+    UseSupabase --> CheckPaymentFlag
+    UsePostgres --> CheckPaymentFlag{ENABLE_PAYMENTS?}
+
+    CheckPaymentFlag -->|true| InitStripe[Initialize Stripe SDK]
+    CheckPaymentFlag -->|false| SkipStripe[Skip Stripe initialization]
+
+    InitStripe --> TestStripeConnection{Stripe API reachable?}
+    TestStripeConnection -->|No| StripeError[Warning: Stripe connection failed<br/>Continue with degraded mode]
+    TestStripeConnection -->|Yes| StripeConnected[Stripe connected]
+
+    SkipStripe --> InitLogging
+    StripeError --> InitLogging
+    StripeConnected --> InitLogging[Initialize logging system]
+
+    %% Logging Setup
+    InitLogging --> CreateLogDir{Log directory exists?}
+    CreateLogDir -->|No| CreateDir[Create log directory]
+    CreateLogDir -->|Yes| ConfigureRotation[Configure log rotation:<br/>- Max size: LOG_MAX_SIZE_MB<br/>- Rotation: LOG_ROTATION_DAYS<br/>- Retention: LOG_RETENTION_DAYS]
+
+    CreateDir --> ConfigureRotation
+    ConfigureRotation --> SetupCleanup[Schedule cleanup job<br/>Runs daily to delete old logs]
+
+    SetupCleanup --> TestLogging[Test logging]
+    TestLogging --> LoggingWorks{Logging works?}
+    LoggingWorks -->|No| LoggingError[Error: Logging initialization failed]
+    LoggingError --> FailFast
+
+    LoggingWorks -->|Yes| LogStartup[Log: Application initialized successfully]
+
+    %% Final Health Checks
+    LogStartup --> HealthChecks[Run health checks:<br/>- Database<br/>- Gemini API<br/>- Stripe API optional]
+
+    HealthChecks --> AllHealthy{All services healthy?}
+    AllHealthy -->|Degraded| LogWarning[Warning: Some services unavailable]
+    AllHealthy -->|Healthy| LogHealthy[Log: All services healthy]
+
+    LogWarning --> StartServer
+    LogHealthy --> StartServer[Start web server]
+
+    StartServer --> ListenPort[Listen on PORT]
+    ListenPort --> LogReady[Log: Application ready]
+    LogReady --> End2([Application started successfully])
+
+    %% Styling
+    classDef errorState fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    classDef successState fill:#ccffcc,stroke:#00cc00,stroke-width:2px
+    classDef processState fill:#cce5ff,stroke:#0066cc,stroke-width:2px
+    classDef warningState fill:#fff4cc,stroke:#ff9900,stroke-width:2px
+
+    class FailFast,DevConfigError,TestConfigError,ProdConfigError,SecretsError,DevDBError,TestDBError,ProdDBError,MigrationError,LoggingError,SupabaseConfigError errorState
+    class DevDBConnected,SupabaseConnected,ProdSupabaseConnected,StripeConnected,LogReady,End2 successState
+    class ValidateConfig,RunMigrations,InitFeatureFlags,InitLogging processState
+    class LogWarning,StripeError warningState

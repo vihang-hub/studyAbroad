@@ -1,0 +1,968 @@
+openapi: 3.1.0
+info:
+  title: Study Abroad MVP - UK Study & Migration Research API
+  version: 1.0.0
+  description: |
+    REST API for the MVP UK Study & Migration Research App.
+    Provides endpoints for report generation, retrieval, and management.
+
+    **Environment Modes**:
+    - dev: Local PostgreSQL, no payments, debug logs
+    - test: Supabase, no payments, debug logs
+    - production: Supabase, payments enabled, error logs
+
+    **Authentication**: Clerk JWT via Authorization header
+    **Payment**: Stripe (£2.99 per report in production mode)
+  contact:
+    name: Study Abroad API Support
+    email: support@studyabroad.example.com
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api-test.studyabroad.example.com
+    description: Test server
+  - url: https://api.studyabroad.example.com
+    description: Production server
+
+security:
+  - ClerkAuth: []
+
+tags:
+  - name: reports
+    description: Report generation and retrieval
+  - name: payments
+    description: Payment processing
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /health:
+    get:
+      tags:
+        - health
+      summary: Basic health check
+      description: Returns service health status
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  value:
+                    status: healthy
+                    timestamp: '2025-12-31T12:00:00.000Z'
+                    environment: production
+                    version: 1.0.0
+
+  /health/detailed:
+    get:
+      tags:
+        - health
+      summary: Detailed health check
+      description: Returns detailed health status including database and external services
+      operationId: detailedHealthCheck
+      security: []
+      responses:
+        '200':
+          description: Detailed health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+              examples:
+                healthy:
+                  value:
+                    status: healthy
+                    timestamp: '2025-12-31T12:00:00.000Z'
+                    environment: production
+                    version: 1.0.0
+                    checks:
+                      database:
+                        status: healthy
+                        latency_ms: 12
+                      gemini_api:
+                        status: healthy
+                        latency_ms: 150
+                      stripe_api:
+                        status: healthy
+                        latency_ms: 85
+
+  /api/reports:
+    post:
+      tags:
+        - reports
+      summary: Create and generate a new report
+      description: |
+        Creates a new research report for the specified subject.
+
+        **Payment Flow**:
+        - Production: Requires successful payment before generation
+        - Dev/Test: Bypasses payment flow (ENABLE_PAYMENTS=false)
+
+        **Streaming**: Report content is streamed via Server-Sent Events (SSE)
+      operationId: createReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateReportRequest'
+            examples:
+              computerScience:
+                value:
+                  subject: Computer Science
+                  country: UK
+      responses:
+        '201':
+          description: Report generation initiated (returns SSE stream URL)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateReportResponse'
+              examples:
+                success:
+                  value:
+                    reportId: 550e8400-e29b-41d4-a716-446655440000
+                    streamUrl: /api/reports/550e8400-e29b-41d4-a716-446655440000/stream
+                    status: generating
+                    createdAt: '2025-12-31T12:00:00.000Z'
+                    expiresAt: '2026-01-30T12:00:00.000Z'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '402':
+          $ref: '#/components/responses/PaymentRequired'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - reports
+      summary: List user's reports
+      description: |
+        Returns all active (non-deleted) reports for the authenticated user.
+        Reports are sorted by creation date (newest first).
+        Excludes soft-deleted reports.
+      operationId: listReports
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of reports to return
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          description: Number of reports to skip (pagination)
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListReportsResponse'
+              examples:
+                success:
+                  value:
+                    reports:
+                      - reportId: 550e8400-e29b-41d4-a716-446655440000
+                        subject: Computer Science
+                        country: UK
+                        status: completed
+                        createdAt: '2025-12-31T12:00:00.000Z'
+                        expiresAt: '2026-01-30T12:00:00.000Z'
+                    total: 1
+                    limit: 50
+                    offset: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/reports/{reportId}:
+    get:
+      tags:
+        - reports
+      summary: Retrieve a specific report
+      description: |
+        Returns the full content of a report.
+        Only accessible by the report owner.
+        Returns 404 if report is soft-deleted or doesn't exist.
+      operationId: getReport
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: UUID of the report
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+              examples:
+                success:
+                  value:
+                    reportId: 550e8400-e29b-41d4-a716-446655440000
+                    userId: 660e9500-f39c-52e5-b827-557766550111
+                    subject: Computer Science
+                    country: UK
+                    status: completed
+                    content:
+                      executive_summary:
+                        - UK is a leading destination for Computer Science education
+                        - Top universities include Cambridge, Oxford, Imperial College
+                        - Average tuition fees range from £20,000-£35,000 per year
+                      study_options:
+                        universities:
+                          - name: University of Cambridge
+                            ranking: 1
+                            tuition_range: £28,000-£35,000
+                      estimated_costs:
+                        tuition:
+                          min: 20000
+                          max: 35000
+                          currency: GBP
+                        living:
+                          min: 12000
+                          max: 18000
+                          currency: GBP
+                      visa_overview: |
+                        Student visa requirements for UK...
+                      post_study_work: |
+                        Graduate visa allows 2 years stay...
+                      job_prospects: |
+                        Strong demand for CS graduates...
+                      fallback_jobs: |
+                        Alternative career paths include...
+                      risks: |
+                        Competitive job market, high costs...
+                      action_plan:
+                        30_day:
+                          - Research universities
+                          - Prepare documents
+                        60_day:
+                          - Apply to universities
+                          - Secure funding
+                        90_day:
+                          - Submit visa application
+                          - Book accommodation
+                    citations:
+                      - source: UK Council for International Student Affairs
+                        url: https://www.ukcisa.org.uk/
+                        retrieved_at: '2025-12-31T11:55:00.000Z'
+                        confidence: 0.95
+                      - source: Complete University Guide 2025
+                        url: https://www.thecompleteuniversityguide.co.uk/
+                        retrieved_at: '2025-12-31T11:56:00.000Z'
+                        confidence: 0.92
+                    createdAt: '2025-12-31T12:00:00.000Z'
+                    expiresAt: '2026-01-30T12:00:00.000Z'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - reports
+      summary: Soft delete a report
+      description: |
+        Soft deletes a report (sets deletedAt timestamp).
+        Report remains in database but is no longer accessible.
+        Only the report owner can delete their reports.
+      operationId: deleteReport
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: UUID of the report
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Report soft deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/reports/{reportId}/stream:
+    get:
+      tags:
+        - reports
+      summary: Stream report generation (SSE)
+      description: |
+        Server-Sent Events endpoint for streaming report generation.
+        Returns real-time updates as the AI generates the report.
+
+        **Event Types**:
+        - `start`: Generation started
+        - `chunk`: Content chunk generated
+        - `citation`: Citation added
+        - `complete`: Generation completed
+        - `error`: Generation failed
+      operationId: streamReport
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          description: UUID of the report
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SSE stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Server-Sent Events stream
+              examples:
+                stream:
+                  value: |
+                    event: start
+                    data: {"reportId":"550e8400-e29b-41d4-a716-446655440000","status":"generating"}
+
+                    event: chunk
+                    data: {"section":"executive_summary","content":"UK is a leading destination..."}
+
+                    event: citation
+                    data: {"source":"UKCISA","url":"https://www.ukcisa.org.uk/","confidence":0.95}
+
+                    event: complete
+                    data: {"reportId":"550e8400-e29b-41d4-a716-446655440000","status":"completed"}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/payments:
+    post:
+      tags:
+        - payments
+      summary: Create payment intent
+      description: |
+        Creates a Stripe payment intent for report purchase.
+
+        **Environment Behavior**:
+        - Production (ENABLE_PAYMENTS=true): Creates real Stripe payment intent
+        - Dev/Test (ENABLE_PAYMENTS=false): Returns mock payment intent (bypassed)
+      operationId: createPayment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePaymentRequest'
+            examples:
+              standard:
+                value:
+                  amount: 2.99
+                  currency: GBP
+                  reportSubject: Computer Science
+      responses:
+        '201':
+          description: Payment intent created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreatePaymentResponse'
+              examples:
+                production:
+                  value:
+                    paymentId: 770e9600-g40d-63f6-c938-668877661222
+                    clientSecret: pi_3AbCdEfGhIjKlMnO_secret_PqRsTuVwXyZ123456
+                    amount: 2.99
+                    currency: GBP
+                    status: requires_payment_method
+                devTest:
+                  value:
+                    paymentId: mock-payment-id
+                    clientSecret: mock-client-secret
+                    amount: 2.99
+                    currency: GBP
+                    status: succeeded
+                    bypassed: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/payments/webhook:
+    post:
+      tags:
+        - payments
+      summary: Stripe webhook endpoint
+      description: |
+        Handles Stripe webhook events for payment status updates.
+        Verifies webhook signature and processes payment events.
+      operationId: paymentWebhook
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe webhook event payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk JWT token from Authorization header
+
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - environment
+        - version
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          example: healthy
+        timestamp:
+          type: string
+          format: date-time
+          example: '2025-12-31T12:00:00.000Z'
+        environment:
+          type: string
+          enum: [dev, test, production]
+          example: production
+        version:
+          type: string
+          example: 1.0.0
+
+    DetailedHealthResponse:
+      allOf:
+        - $ref: '#/components/schemas/HealthResponse'
+        - type: object
+          required:
+            - checks
+          properties:
+            checks:
+              type: object
+              properties:
+                database:
+                  $ref: '#/components/schemas/HealthCheck'
+                gemini_api:
+                  $ref: '#/components/schemas/HealthCheck'
+                stripe_api:
+                  $ref: '#/components/schemas/HealthCheck'
+
+    HealthCheck:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+        latency_ms:
+          type: integer
+          minimum: 0
+        error:
+          type: string
+
+    CreateReportRequest:
+      type: object
+      required:
+        - subject
+      properties:
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 255
+          description: Field of study (e.g., Computer Science, Nursing)
+          example: Computer Science
+        country:
+          type: string
+          enum: [UK]
+          default: UK
+          description: Destination country (fixed to UK in MVP)
+
+    CreateReportResponse:
+      type: object
+      required:
+        - reportId
+        - streamUrl
+        - status
+        - createdAt
+        - expiresAt
+      properties:
+        reportId:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        streamUrl:
+          type: string
+          format: uri
+          example: /api/reports/550e8400-e29b-41d4-a716-446655440000/stream
+        status:
+          type: string
+          enum: [generating, completed, failed]
+          example: generating
+        createdAt:
+          type: string
+          format: date-time
+          example: '2025-12-31T12:00:00.000Z'
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-01-30T12:00:00.000Z'
+
+    ListReportsResponse:
+      type: object
+      required:
+        - reports
+        - total
+        - limit
+        - offset
+      properties:
+        reports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportSummary'
+        total:
+          type: integer
+          minimum: 0
+          description: Total number of reports (for pagination)
+        limit:
+          type: integer
+          minimum: 1
+        offset:
+          type: integer
+          minimum: 0
+
+    ReportSummary:
+      type: object
+      required:
+        - reportId
+        - subject
+        - country
+        - status
+        - createdAt
+        - expiresAt
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum: [generating, completed, failed]
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    ReportResponse:
+      type: object
+      required:
+        - reportId
+        - userId
+        - subject
+        - country
+        - status
+        - content
+        - citations
+        - createdAt
+        - expiresAt
+      properties:
+        reportId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+          enum: [generating, completed, failed]
+        content:
+          $ref: '#/components/schemas/ReportContent'
+        citations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Citation'
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    ReportContent:
+      type: object
+      required:
+        - executive_summary
+        - study_options
+        - estimated_costs
+        - visa_overview
+        - post_study_work
+        - job_prospects
+        - fallback_jobs
+        - risks
+        - action_plan
+      properties:
+        executive_summary:
+          type: array
+          items:
+            type: string
+          minItems: 5
+          maxItems: 10
+          description: 5-10 bullet points summarizing the report
+        study_options:
+          type: object
+          description: Universities and programs available
+        estimated_costs:
+          type: object
+          required:
+            - tuition
+            - living
+          properties:
+            tuition:
+              $ref: '#/components/schemas/CostRange'
+            living:
+              $ref: '#/components/schemas/CostRange'
+        visa_overview:
+          type: string
+          description: High-level visa and immigration information (non-legal)
+        post_study_work:
+          type: string
+          description: Post-study work visa options
+        job_prospects:
+          type: string
+          description: Employment prospects in the chosen field
+        fallback_jobs:
+          type: string
+          description: Alternative career paths if in-field employment unavailable
+        risks:
+          type: string
+          description: Realistic risks and challenges
+        action_plan:
+          type: object
+          required:
+            - 30_day
+            - 60_day
+            - 90_day
+          properties:
+            30_day:
+              type: array
+              items:
+                type: string
+            60_day:
+              type: array
+              items:
+                type: string
+            90_day:
+              type: array
+              items:
+                type: string
+
+    CostRange:
+      type: object
+      required:
+        - min
+        - max
+        - currency
+      properties:
+        min:
+          type: number
+          format: double
+          minimum: 0
+        max:
+          type: number
+          format: double
+          minimum: 0
+        currency:
+          type: string
+          enum: [GBP]
+
+    Citation:
+      type: object
+      required:
+        - source
+        - url
+        - retrieved_at
+        - confidence
+      properties:
+        source:
+          type: string
+          description: Name of the source
+          example: UK Council for International Student Affairs
+        url:
+          type: string
+          format: uri
+          example: https://www.ukcisa.org.uk/
+        retrieved_at:
+          type: string
+          format: date-time
+          example: '2025-12-31T11:55:00.000Z'
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          description: Confidence score for citation accuracy
+          example: 0.95
+
+    CreatePaymentRequest:
+      type: object
+      required:
+        - amount
+        - currency
+        - reportSubject
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 2.99
+          maximum: 2.99
+          example: 2.99
+        currency:
+          type: string
+          enum: [GBP]
+          example: GBP
+        reportSubject:
+          type: string
+          example: Computer Science
+
+    CreatePaymentResponse:
+      type: object
+      required:
+        - paymentId
+        - clientSecret
+        - amount
+        - currency
+        - status
+      properties:
+        paymentId:
+          type: string
+          format: uuid
+        clientSecret:
+          type: string
+          description: Stripe client secret for payment confirmation
+        amount:
+          type: number
+          format: double
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [requires_payment_method, requires_confirmation, succeeded, failed]
+        bypassed:
+          type: boolean
+          description: True if payment was bypassed (dev/test modes)
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+            - correlationId
+            - timestamp
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code
+              example: PAYMENT_FAILED
+            message:
+              type: string
+              description: Human-readable error message
+              example: Payment processing failed. Please check your payment method.
+            correlationId:
+              type: string
+              format: uuid
+              description: Request correlation ID for troubleshooting
+              example: 880fa700-h51e-74g7-d049-779988772333
+            timestamp:
+              type: string
+              format: date-time
+              example: '2025-12-31T12:00:00.000Z'
+            details:
+              type: object
+              description: Additional error details (optional)
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalidSubject:
+              value:
+                error:
+                  code: VALIDATION_ERROR
+                  message: Subject must be between 1 and 255 characters
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'
+                  details:
+                    field: subject
+                    constraint: minLength
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missingToken:
+              value:
+                error:
+                  code: UNAUTHORIZED
+                  message: Authentication required. Please provide a valid JWT token.
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'
+
+    Forbidden:
+      description: Access forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notOwner:
+              value:
+                error:
+                  code: FORBIDDEN
+                  message: You do not have permission to access this report
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            reportNotFound:
+              value:
+                error:
+                  code: NOT_FOUND
+                  message: Report not found or has been deleted
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'
+
+    PaymentRequired:
+      description: Payment required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            paymentFailed:
+              value:
+                error:
+                  code: PAYMENT_REQUIRED
+                  message: Payment is required before generating a report
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'
+
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            tooManyRequests:
+              value:
+                error:
+                  code: RATE_LIMIT_EXCEEDED
+                  message: Too many requests. Please try again later.
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'
+                  details:
+                    retryAfter: 60
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            serverError:
+              value:
+                error:
+                  code: INTERNAL_SERVER_ERROR
+                  message: An unexpected error occurred. Please try again later.
+                  correlationId: 880fa700-h51e-74g7-d049-779988772333
+                  timestamp: '2025-12-31T12:00:00.000Z'

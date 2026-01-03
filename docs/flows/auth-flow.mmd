@@ -1,0 +1,83 @@
+%% Authentication Flow
+%% Shows user authentication journey from sign-up to redirect
+
+flowchart TD
+    Start([User lands on app]) --> CheckAuth{User authenticated?}
+
+    CheckAuth -->|Yes| ChatPage[Redirect to /chat]
+    CheckAuth -->|No| Landing[Show landing page]
+
+    Landing --> AuthChoice{User action}
+    AuthChoice -->|Click Sign Up| SignUp[Navigate to /sign-up]
+    AuthChoice -->|Click Sign In| SignIn[Navigate to /sign-in]
+
+    %% Sign Up Flow
+    SignUp --> SignUpUI[Clerk Sign-Up UI]
+    SignUpUI --> SelectProvider{Choose provider}
+    SelectProvider -->|Google| GoogleOAuth[Google OAuth flow]
+    SelectProvider -->|Apple| AppleOAuth[Apple OAuth flow]
+    SelectProvider -->|Facebook| FacebookOAuth[Facebook OAuth flow]
+    SelectProvider -->|Email| EmailSignUp[Email + Password]
+
+    GoogleOAuth --> OAuthConsent[User grants consent]
+    AppleOAuth --> OAuthConsent
+    FacebookOAuth --> OAuthConsent
+    OAuthConsent --> EmailVerify{Email verified?}
+
+    EmailSignUp --> EmailSent[Verification email sent]
+    EmailSent --> UserChecksEmail[User checks email]
+    UserChecksEmail --> ClickVerifyLink[Click verification link]
+    ClickVerifyLink --> EmailVerified[Email verified]
+    EmailVerified --> CreateAccount
+
+    EmailVerify -->|Yes| CreateAccount[Create user account]
+    EmailVerify -->|No| SendVerification[Send verification email]
+    SendVerification --> UserChecksEmail
+
+    CreateAccount --> InsertUser[Insert into users table]
+    InsertUser --> SetClerkID[Store clerk_user_id]
+    SetClerkID --> IssueJWT[Clerk issues JWT]
+    IssueJWT --> RedirectAfterSignUp[Redirect to /chat]
+    RedirectAfterSignUp --> ChatPage
+
+    %% Sign In Flow
+    SignIn --> SignInUI[Clerk Sign-In UI]
+    SignInUI --> SelectSignInProvider{Choose provider}
+    SelectSignInProvider -->|Google| GoogleSignIn[Google OAuth]
+    SelectSignInProvider -->|Apple| AppleSignIn[Apple OAuth]
+    SelectSignInProvider -->|Facebook| FacebookSignIn[Facebook OAuth]
+    SelectSignInProvider -->|Email| EmailSignIn[Email + Password]
+
+    GoogleSignIn --> ValidateCredentials
+    AppleSignIn --> ValidateCredentials
+    FacebookSignIn --> ValidateCredentials
+    EmailSignIn --> ValidateCredentials{Valid credentials?}
+
+    ValidateCredentials -->|Yes| IssueSignInJWT[Clerk issues JWT]
+    ValidateCredentials -->|No| ShowError[Show error message]
+    ShowError --> SignInUI
+
+    IssueSignInJWT --> RedirectAfterSignIn[Redirect to /chat]
+    RedirectAfterSignIn --> ChatPage
+
+    %% Environment-Specific Behavior
+    ChatPage --> EnvCheck{Environment mode?}
+    EnvCheck -->|dev| DevLog[Log: Auth bypassed in dev]
+    EnvCheck -->|test/prod| ValidateJWT[Validate JWT token]
+
+    DevLog --> ChatInterface[Show chat interface]
+    ValidateJWT --> JWTValid{JWT valid?}
+    JWTValid -->|Yes| ChatInterface
+    JWTValid -->|No| ExpiredSession[Session expired]
+    ExpiredSession --> SignIn
+
+    ChatInterface --> End([User ready to create reports])
+
+    %% Styling
+    classDef errorState fill:#ffcccc,stroke:#cc0000,stroke-width:2px
+    classDef successState fill:#ccffcc,stroke:#00cc00,stroke-width:2px
+    classDef processState fill:#cce5ff,stroke:#0066cc,stroke-width:2px
+
+    class ShowError,ExpiredSession errorState
+    class ChatPage,ChatInterface,End successState
+    class CreateAccount,IssueJWT,ValidateJWT processState
