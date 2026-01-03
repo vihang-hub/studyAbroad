@@ -1,0 +1,41 @@
+# Google Cloud Scheduler configuration for report expiry job
+# T142, T144: Daily job to expire old reports
+#
+# This job runs daily at midnight UTC to soft-delete reports that have
+# passed their expires_at date (30 days after creation).
+#
+# Setup:
+# 1. Set CRON_SECRET environment variable in Cloud Run
+# 2. Deploy this config: gcloud scheduler jobs create http expire-reports --config=cloud-scheduler-expire.yaml
+# 3. Monitor job execution in Cloud Scheduler console
+
+name: expire-reports
+description: Daily job to expire old reports (soft delete)
+schedule: "0 0 * * *"  # Daily at midnight UTC
+time_zone: UTC
+attempt_deadline: 300s  # 5 minutes
+
+http_target:
+  uri: https://YOUR_BACKEND_URL/api/cron/expire-reports
+  http_method: POST
+
+  headers:
+    Content-Type: application/json
+    X-Cron-Secret: ${CRON_SECRET}
+
+  # Optional: Add authentication if using Cloud Run
+  # oidc_token:
+  #   service_account_email: YOUR_SERVICE_ACCOUNT@YOUR_PROJECT.iam.gserviceaccount.com
+
+retry_config:
+  retry_count: 3
+  max_retry_duration: 600s  # 10 minutes
+  min_backoff_duration: 5s
+  max_backoff_duration: 60s
+  max_doublings: 5
+
+# Job execution settings
+# - Job runs daily at midnight UTC
+# - Retries up to 3 times on failure
+# - Each attempt has 5 minute deadline
+# - Total retry window is 10 minutes

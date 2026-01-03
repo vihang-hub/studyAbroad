@@ -1,0 +1,500 @@
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/bdf2451e-2887-4f70-9982-802e08d698eb "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/b9d4542a-b591-4397-94a2-09b9465d13fd "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/6c04db68-776b-4fa3-836f-891dad4cc860 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/9b48cfc9-bf15-4af1-a025-82ec64f195f8 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/9b48cfc9-bf15-4af1-a025-82ec64f195f8 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/9b48cfc9-bf15-4af1-a025-82ec64f195f8 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/6a278db8-718c-40ac-a9ee-3809d5039cd6 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/b4158f7f-bc36-4b91-8565-84a7402c2a75 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/1adf5c44-d679-4117-adf9-3cb6107e9fb0 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/c911fa44-5459-4fc1-bb2e-242c9b0bad3d "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/df5afd73-d243-4191-80dc-799f415e722e "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/ "HTTP/1.1 200 OK"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/reports/initiate "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/reports/initiate "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/reports/initiate "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports "HTTP/1.1 307 Temporary Redirect"
+HTTP Request: GET http://testserver/reports/ "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports "HTTP/1.1 307 Temporary Redirect"
+HTTP Request: GET http://testserver/reports/ "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: DELETE http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: DELETE http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: DELETE http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 500 Internal Server Error"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/d05f0214-7c10-4998-815f-733af86317fa "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/f9fcb0a7-6f8e-4429-ae55-de640e26c941 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/3adf4194-fb2b-4035-9af2-02b177d73381 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/6d9c0da7-f308-4cc8-864b-20c18a039219 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/6d9c0da7-f308-4cc8-864b-20c18a039219 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/6d9c0da7-f308-4cc8-864b-20c18a039219 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/2157af73-3e12-4d67-ac52-4966b9088bd3 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports?limit=10 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/0e249348-740e-4a7a-8f8d-4de7511d7915 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/26933fbf-7098-4713-9f5d-efd7389736dd "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/b130f68a-199b-469e-ac77-db57fe97d9e6 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/expire-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/api/cron/delete-expired-reports "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/api/reports/fb2fae8f-9c70-4192-b250-741bd2981498 "HTTP/1.1 404 Not Found"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/health "HTTP/1.1 200 OK"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/ "HTTP/1.1 200 OK"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/reports/initiate "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/reports/initiate "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/reports/initiate "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports "HTTP/1.1 307 Temporary Redirect"
+HTTP Request: GET http://testserver/reports/ "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: GET http://testserver/reports "HTTP/1.1 307 Temporary Redirect"
+HTTP Request: GET http://testserver/reports/ "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: DELETE http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: DELETE http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: DELETE http://testserver/reports/report_test_12345 "HTTP/1.1 401 Unauthorized"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+HTTP Request: POST http://testserver/webhooks/stripe "HTTP/1.1 403 Forbidden"
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
+Using selector: KqueueSelector
