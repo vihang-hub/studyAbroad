@@ -5,6 +5,19 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
+BOOTSTRAP (mandatory):
+- Treat `specs/constitution.md` as supreme authority.
+- Apply all repository skills from `.claude/skills/`:
+  - SpeckitGovernance
+  - QualityGates
+  - RagCitationsIntegrity
+  - SecurityBaselineNIST
+- Enforce: no hidden features, UK-only MVP, 30-day retention, £2.99 per query, and citations required.
+- All outputs must follow SpeckitGovernance file locations:
+  - Spec → specs/
+  - Plan → specs/plans/
+  - Tasks → specs/tasks/
+
 ## User Scenarios & Testing *(mandatory)*
 
 <!--

@@ -10,7 +10,18 @@
 [Extract from feature spec: primary requirement + technical approach from research]
 
 ## Technical Context
-
+BOOTSTRAP (mandatory):
+- Treat `specs/constitution.md` as supreme authority.
+- Apply all repository skills from `.claude/skills/`:
+  - SpeckitGovernance
+  - QualityGates
+  - RagCitationsIntegrity
+  - SecurityBaselineNIST
+- Enforce: no hidden features, UK-only MVP, 30-day retention, £2.99 per query, and citations required.
+- All outputs must follow SpeckitGovernance file locations:
+  - Spec → specs/
+  - Plan → specs/plans/
+  - Tasks → specs/tasks/
 <!--
   ACTION REQUIRED: Replace the content in this section with the technical details
   for the project. The structure here is presented in advisory capacity to guide
@@ -70,41 +81,113 @@ specs/[###-feature]/
   not include Option labels.
 -->
 
-```text
-# [REMOVE IF UNUSED] Option 1: Single project (DEFAULT)
-src/
-├── models/
-├── services/
-├── cli/
-└── lib/
+├── agents
+│   ├── checklists
+│   ├── commands
+│   └── roles
+├── apps
+│   └── study-abroad
+├── ARCHITECTURE.md
+├── backend
+│   ├── coverage.json
+│   ├── Dockerfile
+│   ├── pyproject.toml
+│   ├── src
+│   ├── supabase
+│   └── tests
+├── CLAUDE.md
+├── DATABASE.md
+├── docs
+│   ├── adr
+│   ├── DATABASE-COMMANDS.md
+│   ├── diagrams
+│   ├── guides
+│   ├── setup
+│   ├── testing
+│   └── testing-strategy.md
+├── frontend
+│   ├── components.json
+│   ├── coverage
+│   ├── next-env.d.ts
+│   ├── next.config.js
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── src
+│   ├── stryker.conf.json
+│   ├── tailwind.config.ts
+│   ├── tests
+│   ├── tsconfig.json
+│   └── vitest.config.ts
+├── infrastructure
+│   ├── docker
+│   └── scripts
+├── Makefile
+├── MONOREPO-MIGRATION.md
+├── package-lock.json
+├── package.json
+├── packages
+│   ├── shared-auth
+│   ├── shared-db
+│   ├── shared-types
+│   └── shared-ui
+├── README.md
+├── scripts
+├── SETUP-DATABASE.md
+├── SETUP-LOCAL-DEV.md
+├── shared
+│   ├── coverage
+│   ├── dist
+│   ├── package.json
+│   ├── src
+│   ├── stryker.conf.json
+│   ├── tests
+│   ├── tsconfig.json
+│   └── vitest.config.ts
+├── specs
+│   ├── 001-mvp-uk-study-migration
+│   ├── plans
+│   └── tasks
 
-tests/
-├── contract/
-├── integration/
-└── unit/
 
-# [REMOVE IF UNUSED] Option 2: Web application (when "frontend" + "backend" detected)
-backend/
-├── src/
-│   ├── models/
-│   ├── services/
-│   └── api/
-└── tests/
+**Shared components structure**:
 
-frontend/
-├── src/
-│   ├── components/
-│   ├── pages/
-│   └── services/
-└── tests/
+Shared
+├── auth
+│   ├── backend
+│   │   └── index.ts
+│   ├── database
+│   │   └── index.ts
+│   ├── hooks
+│   │   └── index.ts
+│   ├── package.json
+│   ├── README.md
+│   ├── types
+│   │   └── index.ts
+│   └── ui-components
+│       └── index.tsx
+├── package.json
+├── payments
+│   ├── backend
+│   │   └── index.ts
+│   ├── database
+│   │   └── index.ts
+│   ├── hooks
+│   │   └── index.ts
+│   ├── package.json
+│   ├── README.md
+│   ├── types
+│   │   └── index.ts
+│   └── ui-components
+│       └── index.tsx
+├── README.md
+├── tree-shared.md
+├── types
+│   └── README.md
+├── ui-components
+│   └── README.md
+└── utils
+    └── README.md
 
-# [REMOVE IF UNUSED] Option 3: Mobile + API (when "iOS/Android" detected)
-api/
-└── [same as backend above]
-
-ios/ or android/
-└── [platform-specific structure: feature modules, UI flows, platform tests]
-```
 
 **Structure Decision**: [Document the selected structure and reference the real
 directories captured above]
