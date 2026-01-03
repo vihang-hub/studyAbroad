@@ -1,8 +1,14 @@
 # Gate5 — QA/Test Execution
 
-**Status**: ⚠️  **IN PROGRESS** (Phase 1: 75% complete)
-**Date**: 2026-01-02
+**Status**: ⚠️  **IN PROGRESS** (Phase 2: Frontend Coverage Improvement - 16% complete)
+**Date**: 2026-01-03 (Updated)
 **Agent**: QA Testing Specialist & Test Engineer
+
+**Latest Progress (2026-01-03):**
+- Frontend coverage: 21.93% → 31.5% (+9.57pp in 1.25 hours)
+- New tests added: 50 tests (100% passing)
+- Files tested: api-client.ts (32 tests), usePayment.ts (18 tests)
+- Detailed report: `/Users/vihang/projects/study-abroad/docs/testing/coverage-progress-2026-01-03.md`
 
 ---
 
@@ -144,12 +150,14 @@ cd /Users/vihang/projects/study-abroad/shared/feature-flags && npx vitest run --
 
 ---
 
-### ❌ T165: Coverage frontend/ - achieve ≥90% - **FAIL**
+### ❌ T165: Coverage frontend/ - achieve ≥90% - **FAIL** (In Progress)
 
 **Target**: ≥90% statement and branch coverage
-**Current**: 0.49% lines, 5.26% functions, 18.18% branches
-**Gap**: -89.51 percentage points
-**Status**: ❌ **FAIL** (Critical gap)
+**Baseline (2026-01-02)**: 0.49% lines → 21.93% lines (after initial fixes)
+**Current (2026-01-03)**: 31.5% lines, 53.06% functions, 84.26% branches
+**Gap**: -58.5 percentage points
+**Progress**: +9.57pp gained (16.4% of total gap completed)
+**Status**: ❌ **FAIL** (Active improvement in progress)
 
 **Command Run**:
 ```bash
