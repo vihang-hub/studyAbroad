@@ -153,5 +153,10 @@
     "wip_commit": null
   },
 
-  "session_end": null
+  "session_end": {
+    "timestamp": "2026-01-03T10:30:00Z",
+    "reason": "graceful_stop",
+    "initiated_by": "user",
+    "wip_commit": "f9bca2e"
+  }
 }
