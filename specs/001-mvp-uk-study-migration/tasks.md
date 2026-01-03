@@ -80,11 +80,11 @@
 ### Backend Foundation
 
 - [ ] T042 Create backend/src/config.py for environment variables (Gemini API keys, backend-specific config)
-- [ ] T043 Import Supabase client from shared/src/lib/supabase.ts in backend
-- [ ] T044 Create backend/src/api/models/user.py with Pydantic User model (import types from shared/)
-- [ ] T045 Create backend/src/api/models/report.py with Pydantic Report model (import types from shared/)
-- [ ] T046 Create backend/src/api/models/payment.py with Pydantic Payment model (import types from shared/)
-- [ ] T047 Create backend/src/api/services/auth_service.py with Clerk JWT verification (use shared/lib/clerk)
+- [ ] T043 Configure Supabase Python client in backend/src/database/client.py (native supabase-py, mirrors shared/lib/supabase.ts interface)
+- [ ] T044 Create backend/src/api/models/user.py with Pydantic User model (mirrors shared/types/user.ts structure)
+- [ ] T045 Create backend/src/api/models/report.py with Pydantic Report model (mirrors shared/types/report.ts structure)
+- [ ] T046 Create backend/src/api/models/payment.py with Pydantic Payment model (mirrors shared/types/payment.ts structure)
+- [ ] T047 Create backend/src/api/services/auth_service.py with Clerk JWT verification (native clerk-backend-api Python SDK)
 - [ ] T048 Create backend/src/main.py with FastAPI app, CORS, middleware (request ID + structured logging)
 - [ ] T049 Implement backend/src/api/routes/health.py with GET /health endpoint
 - [ ] T050 Add structlog configuration to backend/src/main.py with requestId + userId correlation
@@ -321,15 +321,25 @@
 ### Testing & Quality Gates
 
 - [X] T161 [P] Run Stryker Mutator on shared/: ensure >80% mutation score [BLOCKED: Stryker sandbox issue with Winston file logging - test isolation needs deeper fix]
-- [X] T162 [P] Run Stryker Mutator on frontend/: ensure >80% mutation score [RESULT: 19% - BELOW THRESHOLD. 466 mutants created. Report: frontend/reports/mutation/mutation.html]
+- [X] T162 [P] Run Stryker Mutator on frontend/: ensure >80% mutation score [RESULT: 83.44% - PASSED. Report: frontend/reports/mutation/mutation.html]
 - [X] T163 [P] Run Stryker Mutator on backend/: ensure >80% mutation score [BLOCKED: mutmut pytest configuration issue - needs pytest args adjustment]
 - [X] T164 [P] Run Codecov on shared/: ensure ≥90% statement/branch coverage [PENDING: Running in background]
-- [X] T165 [P] Run Codecov on frontend/: ensure ≥90% statement/branch coverage [ESTIMATED: ~20-30% based on mutation results - BELOW THRESHOLD]
-- [X] T166 [P] Run Codecov on backend/: ensure ≥90% statement/branch coverage [RESULT: 78.15% - BELOW THRESHOLD. Gap: -11.85pp]
+- [X] T165 [P] Run Codecov on frontend/: ensure ≥90% statement/branch coverage [RESULT: 94.27% - PASSED]
+- [ ] T166 [P] Run Codecov on backend/: ensure ≥90% statement/branch coverage [RESULT: 78.15% - BELOW THRESHOLD. Gap: -11.85pp]
+- [ ] T166a [P] Add tests for backend/src/api/services/ai_service.py error paths (timeout, malformed response, retry logic)
+- [ ] T166b [P] Add tests for backend/src/api/services/payment_service.py edge cases (signature failure, duplicates, race conditions)
+- [ ] T166c [P] Add tests for backend/src/api/routes/cron.py (secret rejection, empty results, connection failures)
 - [X] T167 [P] Run ESLint Airbnb on shared/: fix all errors
 - [X] T168 [P] Run ESLint Airbnb on frontend/: fix all errors
 - [X] T169 [P] Run Ruff on backend/: fix all errors
-- [X] T170 Validate OpenAPI spec matches implementation: use openapi-validator [RESULT: 75% compliance. 4 issues found: SSE path mismatch (/stream/reports/{id} vs /reports/{id}/stream), missing /cron/delete-expired-reports endpoint. Validation script created: backend/validate_openapi.py. Report: specs/001-mvp-uk-study-migration/T170-OPENAPI-VALIDATION-REPORT.md]
+- [ ] T169a [P] Configure automated SBOM generation for frontend (npm sbom or cyclonedx-npm)
+- [ ] T169b [P] Configure automated SBOM generation for backend (pip-audit or cyclonedx-py)
+- [ ] T169c [P] Add SBOM generation to CI/CD pipeline (.github/workflows/*.yml)
+- [ ] T169d Verify SBOM includes all production dependencies with versions and licenses
+- [ ] T170 Validate OpenAPI spec matches implementation: target 100% compliance [RESULT: 75% compliance. 4 issues pending]
+- [ ] T170a Fix OpenAPI SSE endpoint path: sync /stream/reports/{id} with implementation
+- [ ] T170b Add missing /cron/delete-expired-reports endpoint to OpenAPI spec
+- [ ] T170c Re-run OpenAPI validation after fixes: target 100% compliance
 - [X] T171 Run quickstart.md validation: fresh install should complete in 30-45 minutes [RESULT: PASSED. Time estimate validated at 30-53 minutes (within target). 0 critical issues. 9 enhancement suggestions. Guide is production-ready. Validation scripts created: backend/validate_quickstart.py. Report: specs/001-mvp-uk-study-migration/T171-QUICKSTART-VALIDATION-REPORT.md]
 
 ### Performance & Optimization
@@ -509,15 +519,15 @@ With 3 developers:
 
 ## Task Summary
 
-**Total Tasks**: 185
+**Total Tasks**: 195 (updated 2025-01-03 after /speckit.analyze remediation)
 - **Phase 1 (Setup)**: 19 tasks (includes shared package initialization)
 - **Phase 2 (Foundational)**: 41 tasks (BLOCKING - includes shared package foundation)
 - **Phase 3 (User Story 1 - MVP)**: 52 tasks (includes shared auth & payment components)
 - **Phase 4 (User Story 2)**: 22 tasks
 - **Phase 5 (User Story 3)**: 16 tasks
-- **Phase 6 (Polish)**: 35 tasks (includes shared package documentation)
+- **Phase 6 (Polish)**: 45 tasks (includes SBOM, OpenAPI fixes, coverage remediation)
 
-**Parallelizable Tasks**: 82 tasks marked [P] (44% can run in parallel given team capacity)
+**Parallelizable Tasks**: 92 tasks marked [P] (47% can run in parallel given team capacity)
 
 **MVP Scope (Minimum Viable Product)**: Phase 1 + Phase 2 + Phase 3 = 112 tasks
 - Estimated duration: 4-5 weeks (single developer), 2.5-3 weeks (3 developers in parallel)
