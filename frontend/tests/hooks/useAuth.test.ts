@@ -2,14 +2,13 @@
  * Tests for useAuth hook (frontend wrapper)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { useAuth } from '../../src/hooks/useAuth';
-import { useUser, useClerk } from '@clerk/clerk-react';
+import { useUser } from '@clerk/nextjs';
 
-// Mock the Clerk module - must mock @clerk/clerk-react since that's what shared package uses
-vi.mock('@clerk/clerk-react', () => ({
+// Mock @clerk/nextjs since that's what the actual implementation uses
+vi.mock('@clerk/nextjs', () => ({
   useUser: vi.fn(),
-  useClerk: vi.fn(),
 }));
 
 describe('useAuth hook', () => {
@@ -22,21 +21,17 @@ describe('useAuth hook', () => {
       isLoaded: false,
       isSignedIn: false,
       user: null,
-    });
-    vi.mocked(useClerk).mockReturnValue({
-      signOut: vi.fn(),
-      openSignIn: vi.fn(),
-      openSignUp: vi.fn(),
-    });
+    } as any);
 
     const { result } = renderHook(() => useAuth());
 
     expect(result.current.isLoading).toBe(true);
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.user).toBeNull();
+    expect(result.current.userId).toBeUndefined();
   });
 
-  it('should return authenticated state when user signed in', async () => {
+  it('should return authenticated state when user signed in', () => {
     const mockUser = {
       id: 'user_12345',
       fullName: 'Test User',
@@ -48,22 +43,14 @@ describe('useAuth hook', () => {
       isLoaded: true,
       isSignedIn: true,
       user: mockUser,
-    });
-    vi.mocked(useClerk).mockReturnValue({
-      signOut: vi.fn(),
-      openSignIn: vi.fn(),
-      openSignUp: vi.fn(),
-    });
+    } as any);
 
     const { result } = renderHook(() => useAuth());
 
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-      expect(result.current.isAuthenticated).toBe(true);
-      expect(result.current.user).not.toBeNull();
-      expect(result.current.user?.userId).toBe('user_12345');
-      expect(result.current.user?.email).toBe('test@example.com');
-    });
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isAuthenticated).toBe(true);
+    expect(result.current.user).toEqual(mockUser);
+    expect(result.current.userId).toBe('user_12345');
   });
 
   it('should return unauthenticated state when user not signed in', () => {
@@ -71,77 +58,68 @@ describe('useAuth hook', () => {
       isLoaded: true,
       isSignedIn: false,
       user: null,
-    });
-    vi.mocked(useClerk).mockReturnValue({
-      signOut: vi.fn(),
-      openSignIn: vi.fn(),
-      openSignUp: vi.fn(),
-    });
+    } as any);
 
     const { result } = renderHook(() => useAuth());
 
     expect(result.current.isLoading).toBe(false);
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.user).toBeNull();
+    expect(result.current.userId).toBeUndefined();
   });
 
-  it('should provide signOut function', () => {
-    const mockSignOut = vi.fn();
+  it('should return userId from user object', () => {
+    const mockUser = {
+      id: 'user_test_123',
+      firstName: 'Test',
+      lastName: 'User',
+    };
 
     vi.mocked(useUser).mockReturnValue({
       isLoaded: true,
-      isSignedIn: false,
-      user: null,
-    });
-    vi.mocked(useClerk).mockReturnValue({
-      signOut: mockSignOut,
-      openSignIn: vi.fn(),
-      openSignUp: vi.fn(),
-    });
+      isSignedIn: true,
+      user: mockUser,
+    } as any);
 
     const { result } = renderHook(() => useAuth());
 
-    expect(result.current.signOut).toBeDefined();
-    expect(typeof result.current.signOut).toBe('function');
+    expect(result.current.userId).toBe('user_test_123');
   });
 
-  it('should provide openSignIn function', () => {
-    const mockOpenSignIn = vi.fn();
-
+  it('should handle undefined user gracefully', () => {
     vi.mocked(useUser).mockReturnValue({
       isLoaded: true,
       isSignedIn: false,
-      user: null,
-    });
-    vi.mocked(useClerk).mockReturnValue({
-      signOut: vi.fn(),
-      openSignIn: mockOpenSignIn,
-      openSignUp: vi.fn(),
-    });
+      user: undefined,
+    } as any);
 
     const { result } = renderHook(() => useAuth());
 
-    expect(result.current.openSignIn).toBeDefined();
-    expect(typeof result.current.openSignIn).toBe('function');
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.user).toBeUndefined();
+    expect(result.current.userId).toBeUndefined();
   });
 
-  it('should provide openSignUp function', () => {
-    const mockOpenSignUp = vi.fn();
-
+  it('should correctly map isLoaded to isLoading (inverted)', () => {
+    // When not loaded, isLoading should be true
     vi.mocked(useUser).mockReturnValue({
-      isLoaded: true,
+      isLoaded: false,
       isSignedIn: false,
       user: null,
-    });
-    vi.mocked(useClerk).mockReturnValue({
-      signOut: vi.fn(),
-      openSignIn: vi.fn(),
-      openSignUp: mockOpenSignUp,
-    });
+    } as any);
 
-    const { result } = renderHook(() => useAuth());
+    const { result, rerender } = renderHook(() => useAuth());
+    expect(result.current.isLoading).toBe(true);
 
-    expect(result.current.openSignUp).toBeDefined();
-    expect(typeof result.current.openSignUp).toBe('function');
+    // When loaded, isLoading should be false
+    vi.mocked(useUser).mockReturnValue({
+      isLoaded: true,
+      isSignedIn: true,
+      user: { id: 'user_123' },
+    } as any);
+
+    rerender();
+    expect(result.current.isLoading).toBe(false);
   });
 });

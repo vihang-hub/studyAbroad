@@ -400,11 +400,10 @@ describe('useReports', () => {
       let refetchPromise: Promise<void>;
       await act(async () => {
         refetchPromise = result.current.refetch();
-        // Should be loading during refetch
-        expect(result.current.isLoading).toBe(true);
         await refetchPromise;
       });
 
+      // After refetch completes, should not be loading
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });

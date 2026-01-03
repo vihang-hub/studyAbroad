@@ -74,8 +74,11 @@ describe('ReportCard', () => {
 
   it('displays created date', () => {
     render(<ReportCard report={baseReport} />);
-    // Should display some time-related text
-    expect(screen.getByText(/ago|Yesterday|days ago/i)).toBeInTheDocument();
+    // Should display some time-related text (there will be multiple - created date and expiry)
+    const timeElements = screen.getAllByText(/ago|Yesterday|days ago/i);
+    expect(timeElements.length).toBeGreaterThan(0);
+    // At least one should match the created date pattern (mins/hours/days ago)
+    expect(timeElements.some(el => el.textContent?.match(/\d+\s*(mins?|hours?|days?)\s*ago/))).toBe(true);
   });
 
   it('displays expiry date for non-expired reports', () => {
