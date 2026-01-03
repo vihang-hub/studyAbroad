@@ -13,13 +13,11 @@ These tests validate end-to-end flows from the specification:
 """
 
 import pytest
-from unittest.mock import Mock, patch, AsyncMock, MagicMock
-from fastapi.testclient import TestClient
+from unittest.mock import Mock, patch
 import json
 import asyncio
 from datetime import datetime, timedelta
 
-from src.main import app
 from src.api.models.report import ReportStatus
 from src.api.models.payment import PaymentStatus
 

@@ -3,14 +3,13 @@ Tests for payment service (Stripe integration)
 """
 import pytest
 from unittest.mock import patch, Mock, MagicMock
-from datetime import datetime
 from src.api.services.payment_service import (
     create_checkout_session,
     update_payment_status,
     get_payment_by_intent_id,
     verify_webhook_signature,
 )
-from src.api.models.payment import Payment, PaymentStatus
+from src.api.models.payment import PaymentStatus
 
 
 class TestCreateCheckoutSession:
@@ -222,7 +221,6 @@ class TestVerifyWebhookSignature:
 
     def test_verify_webhook_signature_valid(self):
         """Test successful webhook signature verification"""
-        import stripe as stripe_lib
 
         with patch("src.api.services.payment_service.stripe.Webhook") as mock_webhook:
             mock_event = {"type": "payment_intent.succeeded", "id": "evt_12345"}
@@ -234,7 +232,6 @@ class TestVerifyWebhookSignature:
 
     def test_verify_webhook_signature_invalid_payload(self):
         """Test webhook verification with invalid payload"""
-        import stripe as stripe_lib
 
         with patch("src.api.services.payment_service.stripe.Webhook") as mock_webhook:
             mock_webhook.construct_event.side_effect = ValueError("Invalid payload")

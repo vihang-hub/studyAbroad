@@ -9,7 +9,6 @@ Run this script to verify:
 5. Dependencies can be imported
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -23,7 +22,7 @@ def test_configuration():
         from config.loader import ConfigLoader
         
         config = ConfigLoader.load()
-        print(f"✓ Configuration loaded successfully")
+        print("✓ Configuration loaded successfully")
         print(f"  - Environment: {config.ENVIRONMENT_MODE}")
         print(f"  - App Version: {config.APP_VERSION}")
         print(f"  - Log Level: {config.LOG_LEVEL}")
@@ -43,7 +42,7 @@ def test_feature_flags():
         evaluator = FeatureFlagEvaluator()
         flags = evaluator.get_all_flags()
         
-        print(f"✓ Feature flags initialized successfully")
+        print("✓ Feature flags initialized successfully")
         print(f"  - Supabase: {flags.get(Feature.SUPABASE.value)}")
         print(f"  - Payments: {flags.get(Feature.PAYMENTS.value)}")
         print(f"  - Rate Limiting: {flags.get(Feature.RATE_LIMITING.value)}")
@@ -66,7 +65,7 @@ def test_logging():
         with CorrelationContext("test-correlation-id"):
             logger.info("test_log_message", test_field="test_value")
         
-        print(f"✓ Logging configured successfully")
+        print("✓ Logging configured successfully")
         print(f"  - Logger type: {type(logger).__name__}")
         return True
     except Exception as e:
@@ -83,7 +82,7 @@ def test_database():
         # Don't actually connect, just verify adapter can be created
         adapter = get_database_adapter()
         
-        print(f"✓ Database adapter created successfully")
+        print("✓ Database adapter created successfully")
         print(f"  - Adapter type: {type(adapter).__name__}")
         return True
     except Exception as e:
@@ -105,7 +104,7 @@ def test_dependencies():
         feature_flags = get_feature_flags()
         logger = get_logger()
         
-        print(f"✓ Dependencies module working")
+        print("✓ Dependencies module working")
         print(f"  - Config: {type(config).__name__}")
         print(f"  - Feature Flags: {type(feature_flags).__name__}")
         print(f"  - Logger: {type(logger).__name__}")
@@ -121,7 +120,7 @@ def test_api_imports():
     try:
         from api.routes import health, reports, webhooks, stream
         
-        print(f"✓ API routes imported successfully")
+        print("✓ API routes imported successfully")
         print(f"  - Health: {health.router.prefix}")
         print(f"  - Reports: {reports.router.prefix}")
         print(f"  - Webhooks: {webhooks.router.prefix}")

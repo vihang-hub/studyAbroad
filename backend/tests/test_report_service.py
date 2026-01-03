@@ -189,7 +189,7 @@ class TestGetReport:
             mock_get_supabase.return_value = mock_supabase
 
             # Try to get report with different user ID
-            result = await get_report(mock_report_id, "different_user_id")
+            await get_report(mock_report_id, "different_user_id")
 
             # Verify query filters by user_id
             eq_calls = mock_supabase.eq.call_args_list

@@ -16,9 +16,7 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 # Import our database models - import directly from model files to avoid type issues
-from database.models.user import Base
-from database.models.report import Report
-from database.models.payment import Payment
+from database.models.user import Base  # noqa: E402
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

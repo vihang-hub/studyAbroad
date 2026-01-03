@@ -11,14 +11,12 @@ These tests validate data retention and cleanup functionality:
 """
 
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import patch
 from datetime import datetime, timedelta
 import uuid
 import os
 
-from src.main import app
 from src.api.models.report import ReportStatus
-from src.database.repositories.report import ReportRepository
 
 
 class TestT146ExpireOldReports:
@@ -44,7 +42,7 @@ class TestT146ExpireOldReports:
         past_expires_at = datetime.utcnow() - timedelta(days=1)
         report_id = str(uuid.uuid4())
 
-        old_report = {
+        {
             "id": report_id,
             "user_id": user_id,
             "subject": "Old Report",
@@ -73,11 +71,10 @@ class TestT146ExpireOldReports:
         self, test_client, mock_clerk_user
     ):
         """Test that only reports past expires_at are marked expired"""
-        user_id = "user_test_selective_expire"
 
         # Create mix of old and new reports
-        old_report_id = str(uuid.uuid4())
-        new_report_id = str(uuid.uuid4())
+        str(uuid.uuid4())
+        str(uuid.uuid4())
 
         with patch("src.database.repositories.report.ReportRepository.expire_old_reports") as mock_expire:
             # Only 1 report should be expired (the old one)

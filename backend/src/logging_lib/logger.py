@@ -7,7 +7,6 @@ Equivalent to TypeScript logger.ts.
 
 import os
 import logging
-from datetime import datetime
 import structlog
 from structlog.types import FilteringBoundLogger
 

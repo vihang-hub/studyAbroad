@@ -4,7 +4,6 @@ Tests for Log Data Sanitizer
 Tests sensitive data redaction.
 """
 
-import pytest
 from logging_lib.sanitizer import sanitize_log_data
 
 

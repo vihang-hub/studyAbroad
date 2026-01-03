@@ -8,7 +8,6 @@ Tests security of Stripe webhook endpoint including:
 - Malformed payload handling
 """
 import pytest
-import stripe
 import time
 import hmac
 import hashlib
@@ -352,7 +351,7 @@ class TestStripeWebhookSecurity:
         payload = json.dumps(sample_event)
         valid_signature = self.generate_signature(payload, webhook_secret)
 
-        response = client.post(
+        client.post(
             "/webhooks/stripe",
             content=payload,
             headers={
@@ -369,7 +368,7 @@ class TestStripeWebhookSecurity:
         caplog.clear()
         invalid_signature = self.generate_signature(payload, "wrong_secret")
 
-        response = client.post(
+        client.post(
             "/webhooks/stripe",
             content=payload,
             headers={

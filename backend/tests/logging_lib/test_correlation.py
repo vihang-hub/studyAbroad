@@ -4,7 +4,6 @@ Tests for Correlation ID Management
 Tests context-based correlation ID tracking.
 """
 
-import pytest
 from logging_lib.correlation import (
     get_correlation_id,
     set_correlation_id,
@@ -79,10 +78,10 @@ class TestCorrelationID:
 
     def test_nested_correlation_contexts(self):
         """Nested contexts maintain separate IDs"""
-        with CorrelationContext(correlation_id='outer') as outer:
+        with CorrelationContext(correlation_id='outer'):
             assert get_correlation_id() == 'outer'
 
-            with CorrelationContext(correlation_id='inner') as inner:
+            with CorrelationContext(correlation_id='inner'):
                 assert get_correlation_id() == 'inner'
 
             assert get_correlation_id() == 'outer'

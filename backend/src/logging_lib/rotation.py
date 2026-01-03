@@ -8,9 +8,6 @@ Format: app-YYYY-MM-DD-N.log where:
 - N resets to 1 at midnight UTC
 """
 
-import os
-import glob
-import time
 from datetime import datetime, timedelta
 from logging.handlers import RotatingFileHandler
 from pathlib import Path

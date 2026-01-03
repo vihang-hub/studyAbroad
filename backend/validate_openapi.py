@@ -12,7 +12,6 @@ Checks:
 """
 
 import sys
-from pathlib import Path
 
 # Define expected routes from OpenAPI spec
 OPENAPI_ROUTES = {

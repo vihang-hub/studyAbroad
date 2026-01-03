@@ -1,12 +1,8 @@
 """
 Integration tests for API endpoints
 """
-import pytest
-from unittest.mock import patch, Mock, MagicMock
-from fastapi.testclient import TestClient
-from src.main import app
+from unittest.mock import patch
 from src.api.models.report import ReportStatus
-from src.api.models.payment import PaymentStatus
 
 
 class TestHealthEndpoint:

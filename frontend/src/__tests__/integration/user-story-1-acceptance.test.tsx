@@ -18,11 +18,11 @@ import {
 import {
   render, screen, waitFor,
 } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
+import _userEvent from '@testing-library/user-event';
 
-// Import components to test
-import ChatPage from '@/app/(app)/chat/page';
-import ReportPage from '@/app/(app)/report/[id]/page';
+// Import components to test (prefixed with _ for future use)
+import _ChatPage from '@/app/(app)/chat/page';
+import _ReportPage from '@/app/(app)/report/[id]/page';
 import { ChatInput } from '@/components/chat/ChatInput';
 import { MessageList } from '@/components/chat/MessageList';
 import { CitationList } from '@/components/reports/CitationList';
@@ -33,7 +33,7 @@ vi.mock('@clerk/nextjs', () => ({
   useUser: () => ({
     user: { id: 'user_test', email: 'test@example.com' },
     isLoaded: true,
-    isSignedIn: true
+    isSignedIn: true,
   }),
   useAuth: () => ({ isLoaded: true, isSignedIn: true, userId: 'user_test' }),
 }));
@@ -47,14 +47,6 @@ describe('T106: Full Flow - Signup → Chat → Pay → Generate → View Report
   });
 
   it('should complete full flow with all 10 mandatory sections', async () => {
-    // ARRANGE: Mock authenticated user
-    const mockUser = {
-      id: 'user_test_full_flow',
-      email: 'test@example.com',
-      firstName: 'Test',
-      lastName: 'User',
-    };
-
     // ARRANGE: Mock report content with all 10 mandatory sections
     const mockReportContent = {
       executive_summary: [

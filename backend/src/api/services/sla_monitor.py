@@ -4,10 +4,9 @@ Tracks streaming response latency and calculates percentiles (p50/p95/p99)
 Per requirements T172a-c
 """
 
-import time
 from typing import List, Dict, Any
 from collections import deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from logging_lib.logger import get_logger
 
 logger = get_logger()

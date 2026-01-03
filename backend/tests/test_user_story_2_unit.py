@@ -11,7 +11,7 @@ Tests cover Tasks T130-T134:
 """
 
 import pytest
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
+from unittest.mock import Mock, patch, MagicMock
 from datetime import datetime, timedelta
 import uuid
 
@@ -74,7 +74,7 @@ class TestListUserReports:
             mock_chain.data = mock_reports
             mock_client.table.return_value.select.return_value.eq.return_value.is_.return_value.order.return_value.limit.return_value.execute.return_value = mock_chain
 
-            reports = await list_user_reports(user_id, limit=5)
+            await list_user_reports(user_id, limit=5)
 
             # Verify limit was called with 5
             mock_client.table.return_value.select.return_value.eq.return_value.is_.return_value.order.return_value.limit.assert_called_once_with(5)
@@ -154,7 +154,6 @@ class TestGetReport:
         """T132: Test RLS - user cannot access other user's report"""
         from src.api.services.report_service import get_report
 
-        user_a_id = "user_a"
         user_b_id = "user_b"
         report_id = str(uuid.uuid4())
 

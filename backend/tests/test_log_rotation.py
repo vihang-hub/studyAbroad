@@ -3,13 +3,10 @@ Tests for log rotation functionality
 T172f: Test log rotation with size and time-based triggers
 """
 
-import os
 import logging
 import tempfile
-import time
 from datetime import datetime, timedelta
 from pathlib import Path
-import pytest
 
 from src.logging_lib.rotation import DateSequenceRotatingHandler, cleanup_old_logs
 

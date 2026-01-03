@@ -11,13 +11,11 @@ These tests validate report history functionality:
 """
 
 import pytest
-from unittest.mock import Mock, patch, AsyncMock
+from unittest.mock import patch
 from datetime import datetime, timedelta
 import uuid
 
-from src.main import app
 from src.api.models.report import ReportStatus
-from src.database.repositories.report import ReportRepository
 
 
 class TestT130SidebarDisplaysReports:
@@ -272,7 +270,6 @@ class TestT132UserScopedReports:
     ):
         """Test user can only see their own reports in list"""
         user_a_id = "user_a"
-        user_b_id = "user_b"
         mock_clerk_user["id"] = user_a_id
 
         user_a_reports = [
@@ -312,7 +309,6 @@ class TestT132UserScopedReports:
     ):
         """Test user cannot access another user's report by ID"""
         user_a_id = "user_a"
-        user_b_id = "user_b"
         user_b_report_id = str(uuid.uuid4())
 
         # User A tries to access User B's report
@@ -337,7 +333,6 @@ class TestT132UserScopedReports:
     ):
         """Test RLS policies prevent cross-user access"""
         user_id = "user_isolated"
-        other_user_id = "other_user"
         mock_clerk_user["id"] = user_id
 
         # Simulate RLS: service layer should filter by user_id
@@ -345,7 +340,7 @@ class TestT132UserScopedReports:
             # Mock should be called with correct user_id
             mock_list.return_value = []
 
-            response = test_client.get(
+            test_client.get(
                 "/api/reports",
                 headers={"Authorization": f"Bearer test_token_{user_id}"},
             )

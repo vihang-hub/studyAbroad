@@ -11,7 +11,6 @@ Checks:
 5. Troubleshooting covers common issues
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -147,15 +146,15 @@ def validate_quickstart_guide():
     frontend_env_example = FRONTEND_ROOT / ".env.example"
 
     if backend_env_example.exists():
-        print(f"✓ Backend .env.example exists")
+        print("✓ Backend .env.example exists")
     else:
-        print(f"⚠️  Backend .env.example NOT FOUND (quickstart shows expected vars)")
+        print("⚠️  Backend .env.example NOT FOUND (quickstart shows expected vars)")
         warnings.append("Backend .env.example missing (quickstart documents expected vars)")
 
     if frontend_env_example.exists():
-        print(f"✓ Frontend .env.example exists")
+        print("✓ Frontend .env.example exists")
     else:
-        print(f"⚠️  Frontend .env.example NOT FOUND (quickstart shows expected vars)")
+        print("⚠️  Frontend .env.example NOT FOUND (quickstart shows expected vars)")
         warnings.append("Frontend .env.example missing (quickstart documents expected vars)")
 
     print()
