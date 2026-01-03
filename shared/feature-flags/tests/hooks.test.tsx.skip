@@ -1,0 +1,313 @@
+/**
+ * Tests for React hooks
+ */
+
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { renderHook } from '@testing-library/react';
+import { ConfigLoader } from '@study-abroad/shared-config';
+import { FeatureFlags } from '../src/evaluator';
+import { useFeatureFlag, useEnvironmentMode, useAllFeatureFlags } from '../src/hooks';
+import { Feature } from '../src/types';
+
+describe('React Hooks', () => {
+  const originalEnv = { ...process.env };
+
+  beforeEach(() => {
+    FeatureFlags.reset();
+    ConfigLoader.reset();
+    process.env = {};
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
+    FeatureFlags.reset();
+    ConfigLoader.reset();
+  });
+
+  describe('useFeatureFlag()', () => {
+    it('should return false for disabled feature', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useFeatureFlag(Feature.PAYMENTS));
+
+      // Assert
+      expect(result.current).toBe(false);
+    });
+
+    it('should return true for enabled feature', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'production';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.ENABLE_SUPABASE = 'true';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_ANON_KEY = 'test_anon_key';
+      process.env.ENABLE_PAYMENTS = 'true';
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.STRIPE_SECRET_KEY = 'sk_test_123';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useFeatureFlag(Feature.PAYMENTS));
+
+      // Assert
+      expect(result.current).toBe(true);
+    });
+
+    it('should return consistent value across multiple renders', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result, rerender } = renderHook(() => useFeatureFlag(Feature.SUPABASE));
+      const firstValue = result.current;
+      rerender();
+
+      // Assert
+      expect(result.current).toBe(firstValue);
+    });
+
+    it('should work with all feature flags', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act & Assert
+      const { result: supabaseResult } = renderHook(() => useFeatureFlag(Feature.SUPABASE));
+      expect(supabaseResult.current).toBe(false);
+
+      const { result: paymentsResult } = renderHook(() => useFeatureFlag(Feature.PAYMENTS));
+      expect(paymentsResult.current).toBe(false);
+
+      const { result: rateLimitResult } = renderHook(() => useFeatureFlag(Feature.RATE_LIMITING));
+      expect(rateLimitResult.current).toBe(false);
+
+      const { result: observabilityResult } = renderHook(() => useFeatureFlag(Feature.OBSERVABILITY));
+      expect(observabilityResult.current).toBe(false);
+    });
+
+    it('should memoize result based on feature parameter', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result, rerender } = renderHook(
+        ({ feature }) => useFeatureFlag(feature),
+        { initialProps: { feature: Feature.SUPABASE } },
+      );
+
+      const firstResult = result.current;
+      rerender({ feature: Feature.SUPABASE });
+
+      // Assert - should be same reference (memoized)
+      expect(result.current).toBe(firstResult);
+    });
+  });
+
+  describe('useEnvironmentMode()', () => {
+    it('should return "dev" in development mode', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useEnvironmentMode());
+
+      // Assert
+      expect(result.current).toBe('dev');
+    });
+
+    it('should return "test" in test mode', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'test';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.ENABLE_SUPABASE = 'true';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_ANON_KEY = 'test_anon_key';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useEnvironmentMode());
+
+      // Assert
+      expect(result.current).toBe('test');
+    });
+
+    it('should return "production" in production mode', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'production';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.ENABLE_SUPABASE = 'true';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_ANON_KEY = 'test_anon_key';
+      process.env.ENABLE_PAYMENTS = 'true';
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.STRIPE_SECRET_KEY = 'sk_test_123';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useEnvironmentMode());
+
+      // Assert
+      expect(result.current).toBe('production');
+    });
+
+    it('should return consistent value across rerenders', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result, rerender } = renderHook(() => useEnvironmentMode());
+      const firstValue = result.current;
+      rerender();
+
+      // Assert
+      expect(result.current).toBe(firstValue);
+    });
+
+    it('should memoize result', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result, rerender } = renderHook(() => useEnvironmentMode());
+      const firstResult = result.current;
+      rerender();
+
+      // Assert - should be same reference (memoized)
+      expect(result.current).toBe(firstResult);
+    });
+  });
+
+  describe('useAllFeatureFlags()', () => {
+    it('should return all flags as false in dev mode', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useAllFeatureFlags());
+
+      // Assert
+      expect(result.current).toEqual({
+        [Feature.SUPABASE]: false,
+        [Feature.PAYMENTS]: false,
+        [Feature.RATE_LIMITING]: false,
+        [Feature.OBSERVABILITY]: false,
+      });
+    });
+
+    it('should return enabled flags as true', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'production';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.ENABLE_SUPABASE = 'true';
+      process.env.SUPABASE_URL = 'https://test.supabase.co';
+      process.env.SUPABASE_ANON_KEY = 'test_anon_key';
+      process.env.ENABLE_PAYMENTS = 'true';
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.STRIPE_SECRET_KEY = 'sk_test_123';
+      process.env.ENABLE_RATE_LIMITING = 'true';
+      process.env.ENABLE_OBSERVABILITY = 'true';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useAllFeatureFlags());
+
+      // Assert
+      expect(result.current).toEqual({
+        [Feature.SUPABASE]: true,
+        [Feature.PAYMENTS]: true,
+        [Feature.RATE_LIMITING]: true,
+        [Feature.OBSERVABILITY]: true,
+      });
+    });
+
+    it('should include all 4 feature flags', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result } = renderHook(() => useAllFeatureFlags());
+
+      // Assert
+      expect(Object.keys(result.current)).toHaveLength(4);
+    });
+
+    it('should return consistent value across rerenders', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result, rerender } = renderHook(() => useAllFeatureFlags());
+      const firstValue = result.current;
+      rerender();
+
+      // Assert
+      expect(result.current).toEqual(firstValue);
+    });
+
+    it('should memoize result', () => {
+      // Arrange
+      process.env.ENVIRONMENT_MODE = 'dev';
+      process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
+      process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
+      process.env.CLERK_SECRET_KEY = 'sk_test_123';
+      process.env.GEMINI_API_KEY = 'test_key';
+
+      // Act
+      const { result, rerender } = renderHook(() => useAllFeatureFlags());
+      const firstResult = result.current;
+      rerender();
+
+      // Assert - should be same reference (memoized)
+      expect(result.current).toBe(firstResult);
+    });
+  });
+});
