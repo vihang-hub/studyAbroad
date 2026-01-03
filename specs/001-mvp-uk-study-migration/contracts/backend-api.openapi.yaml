@@ -1,0 +1,511 @@
+openapi: 3.1.0
+
+info:
+  title: Study Abroad Backend API
+  version: 1.0.0
+  description: |
+    FastAPI backend for UK Study & Migration Research App MVP.
+
+    **Authentication**: All endpoints (except /health) require Clerk JWT in Authorization header.
+
+    **Base URL**: `https://api.studyabroad.example.com` (production)
+
+    **Rate Limiting**: 100 requests/minute per user
+  contact:
+    name: API Support
+    email: api@studyabroad.example.com
+
+servers:
+  - url: https://api.studyabroad.example.com
+    description: Production (Cloud Run)
+  - url: http://localhost:8000
+    description: Local development
+
+tags:
+  - name: reports
+    description: Report generation and retrieval
+  - name: payments
+    description: Payment processing (Stripe)
+  - name: webhooks
+    description: External service webhooks (Stripe)
+  - name: health
+    description: Health check and monitoring
+
+security:
+  - ClerkAuth: []
+
+paths:
+  # ========== HEALTH ==========
+  /health:
+    get:
+      tags: [health]
+      summary: Health check endpoint
+      description: Returns service health status (no auth required)
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy]
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ========== REPORTS ==========
+  /reports/initiate:
+    post:
+      tags: [reports]
+      summary: Initiate paid report generation
+      description: |
+        Creates a Stripe Checkout Session for £2.99 payment.
+        User is redirected to Stripe hosted page to complete payment.
+        After payment succeeds, report generation starts automatically via webhook.
+      operationId: initiateReport
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [subject]
+              properties:
+                subject:
+                  type: string
+                  minLength: 1
+                  maxLength: 200
+                  example: "Computer Science"
+                  description: Field of study (must be non-empty)
+      responses:
+        '200':
+          description: Checkout session created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  checkout_url:
+                    type: string
+                    format: uri
+                    example: "https://checkout.stripe.com/c/pay/cs_test_..."
+                    description: Stripe Checkout URL (redirect user here)
+                  session_id:
+                    type: string
+                    example: "cs_test_a1b2c3..."
+                    description: Stripe Checkout Session ID
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /reports:
+    get:
+      tags: [reports]
+      summary: List user's reports
+      description: Returns all reports for authenticated user (last 30 days, non-expired)
+      operationId: listReports
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [pending, generating, completed, failed]
+          description: Filter by report status
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of reports
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reports:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Report'
+                  total:
+                    type: integer
+                    example: 5
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /reports/{reportId}:
+    get:
+      tags: [reports]
+      summary: Get single report
+      description: Retrieve a specific report by ID (must be owned by authenticated user)
+      operationId: getReport
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - Report belongs to another user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Report not found or expired
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags: [reports]
+      summary: Delete report (optional MVP feature)
+      description: Soft-deletes a report (marks as expired immediately)
+      operationId: deleteReport
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Report deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - Report belongs to another user
+        '404':
+          description: Report not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /reports/{reportId}/stream:
+    get:
+      tags: [reports]
+      summary: Stream report generation (SSE)
+      description: |
+        Server-Sent Events endpoint for real-time report generation progress.
+        Returns streaming updates as AI generates content.
+
+        **Note**: For MVP, frontend may poll GET /reports/{reportId} instead.
+      operationId: streamReport
+      parameters:
+        - name: reportId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SSE stream of report chunks
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  event: chunk
+                  data: {"section": "executive_summary", "content": "First bullet point..."}
+
+                  event: chunk
+                  data: {"section": "study_options", "content": "The UK offers..."}
+
+                  event: complete
+                  data: {"report_id": "uuid", "status": "completed"}
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Report not found
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ========== WEBHOOKS ==========
+  /webhooks/stripe:
+    post:
+      tags: [webhooks]
+      summary: Stripe webhook handler
+      description: |
+        Handles Stripe events (checkout.session.completed, payment_intent.succeeded).
+        Triggers async report generation on successful payment.
+
+        **Security**: Verifies Stripe signature header.
+      operationId: stripeWebhook
+      security: []  # No JWT auth, uses Stripe signature
+      parameters:
+        - name: stripe-signature
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Stripe webhook signature for verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Stripe event payload
+      responses:
+        '200':
+          description: Webhook processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received:
+                    type: boolean
+                    example: true
+        '400':
+          description: Invalid signature or payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ========== CRON JOBS ==========
+  /cron/expire-reports:
+    post:
+      tags: [health]
+      summary: Expire old reports (scheduled job)
+      description: |
+        Marks reports as expired if expires_at < now().
+        Called by Cloud Scheduler daily.
+
+        **Security**: Requires cron secret in Authorization header.
+      operationId: expireReports
+      security:
+        - CronSecret: []
+      responses:
+        '200':
+          description: Expiry job completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expired_count:
+                    type: integer
+                    example: 12
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+# ========== COMPONENTS ==========
+components:
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Clerk JWT token (get from Clerk SDK)
+
+    CronSecret:
+      type: apiKey
+      in: header
+      name: X-Cron-Secret
+      description: Shared secret for cron job authentication
+
+  schemas:
+    Report:
+      type: object
+      properties:
+        report_id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+        user_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+          example: "Computer Science"
+        country:
+          type: string
+          enum: [UK]
+          example: "UK"
+        status:
+          type: string
+          enum: [pending, generating, completed, failed, expired]
+          example: "completed"
+        content:
+          type: object
+          nullable: true
+          description: Structured report content (only present if status=completed)
+          properties:
+            executive_summary:
+              type: array
+              items:
+                type: string
+              example: ["Studying CS in the UK offers world-class education...", "Post-study work visa allows 2 years..."]
+            study_options:
+              type: string
+              example: "### Top Universities\n\n- University of Oxford..."
+            estimated_costs:
+              type: object
+              properties:
+                tuition_ranges:
+                  type: string
+                living_costs:
+                  type: string
+            visa_immigration:
+              type: string
+            post_study_work:
+              type: string
+            job_prospects_in_field:
+              type: string
+            fallback_job_prospects:
+              type: string
+            risks_reality_check:
+              type: string
+            action_plan:
+              type: object
+              properties:
+                30_days:
+                  type: string
+                60_days:
+                  type: string
+                90_days:
+                  type: string
+            sources:
+              type: string
+        citations:
+          type: array
+          nullable: true
+          items:
+            type: object
+            properties:
+              title:
+                type: string
+                example: "UK Gov - Student Visa Guide"
+              url:
+                type: string
+                format: uri
+                example: "https://www.gov.uk/student-visa"
+        generation_metadata:
+          type: object
+          nullable: true
+          properties:
+            model:
+              type: string
+              example: "gemini-2.0-flash-exp"
+            tokens_used:
+              type: integer
+              example: 4567
+            duration_ms:
+              type: integer
+              example: 12340
+        created_at:
+          type: string
+          format: date-time
+          example: "2025-12-29T10:30:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-12-29T10:32:15Z"
+        expires_at:
+          type: string
+          format: date-time
+          example: "2026-01-28T10:30:00Z"
+        error_message:
+          type: string
+          nullable: true
+          example: "Gemini API rate limit exceeded"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Resource not found"
+        detail:
+          type: string
+          nullable: true
+          example: "Report with ID xyz not found"
+        request_id:
+          type: string
+          example: "req_abc123"
+
+  responses:
+    BadRequest:
+      description: Bad request (invalid input)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Validation error"
+            detail: "Field 'subject' is required"
+            request_id: "req_abc123"
+
+    Unauthorized:
+      description: Unauthorized (missing or invalid JWT)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Unauthorized"
+            detail: "Invalid or expired JWT token"
+            request_id: "req_abc123"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error: "Internal server error"
+            detail: "An unexpected error occurred"
+            request_id: "req_abc123"
