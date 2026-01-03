@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
+import { act } from 'react';
 import { useReports } from '@/hooks/useReports';
 import type { Report } from '@/types/report';
 
@@ -153,7 +154,9 @@ describe('useReports', () => {
       expect(mockGet).not.toHaveBeenCalled();
 
       // Manually trigger fetch
-      await result.current.refetch();
+      await act(async () => {
+        await result.current.refetch();
+      });
 
       await waitFor(() => {
         expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
@@ -258,7 +261,9 @@ describe('useReports', () => {
         error: null,
       });
 
-      await result.current.refetch();
+      await act(async () => {
+        await result.current.refetch();
+      });
 
       await waitFor(() => {
         expect(result.current.error).toBeNull();
@@ -371,7 +376,9 @@ describe('useReports', () => {
         expect(mockGet).toHaveBeenCalledTimes(1);
       });
 
-      await result.current.refetch();
+      await act(async () => {
+        await result.current.refetch();
+      });
 
       await waitFor(() => {
         expect(mockGet).toHaveBeenCalledTimes(2);
@@ -390,12 +397,13 @@ describe('useReports', () => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      const refetchPromise = result.current.refetch();
-
-      // Should be loading during refetch
-      expect(result.current.isLoading).toBe(true);
-
-      await refetchPromise;
+      let refetchPromise: Promise<void>;
+      await act(async () => {
+        refetchPromise = result.current.refetch();
+        // Should be loading during refetch
+        expect(result.current.isLoading).toBe(true);
+        await refetchPromise;
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -422,7 +430,9 @@ describe('useReports', () => {
         error: null,
       });
 
-      await result.current.refetch();
+      await act(async () => {
+        await result.current.refetch();
+      });
 
       await waitFor(() => {
         expect(result.current.reports).toEqual(updatedReports);
