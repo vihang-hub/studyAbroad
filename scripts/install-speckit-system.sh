@@ -1535,14 +1535,12 @@ EOF
 echo "  ✓ Constitution template created"
 
 #===============================================================================
-# Create CLAUDE.md with Speckit Workflow Requirements
+# Create/Update CLAUDE.md with Speckit Workflow Requirements
 #===============================================================================
-echo -e "\n${GREEN}Creating CLAUDE.md...${NC}"
+echo -e "\n${GREEN}Configuring CLAUDE.md...${NC}"
 
-cat > "$PROJECT_ROOT/CLAUDE.md" << 'EOF'
-# Project Development Guidelines
-
-## Speckit Workflow Requirements
+# Define the speckit content to add
+SPECKIT_CONTENT='## Speckit Workflow Requirements
 
 **CRITICAL**: ALL development activities MUST be framed within the Speckit framework.
 
@@ -1617,13 +1615,51 @@ Even bug fixes follow speckit:
 - Simple bug → Gate4 (coder) + `superpowers:systematic-debugging`
 - Test failures → Gate5 (qa-tester) + `superpowers:systematic-debugging`
 - Security issue → Gate7 (security-gate-engineer)
-- New feature request → Gate0 (start with /speckit.specify)
+- New feature request → Gate0 (start with /speckit.specify)'
+
+if [ -f "$PROJECT_ROOT/CLAUDE.md" ]; then
+  # File exists - check if speckit content already present
+  if grep -q "## Speckit Workflow Requirements" "$PROJECT_ROOT/CLAUDE.md"; then
+    echo "  ✓ CLAUDE.md already has Speckit workflow requirements (skipped)"
+  elif grep -q "<!-- MANUAL ADDITIONS START -->" "$PROJECT_ROOT/CLAUDE.md"; then
+    # Has manual additions markers - insert speckit content there
+    # Create temp file with the insertion
+    awk -v content="$SPECKIT_CONTENT" '
+      /<!-- MANUAL ADDITIONS START -->/ {
+        print
+        print ""
+        print content
+        print ""
+        next
+      }
+      {print}
+    ' "$PROJECT_ROOT/CLAUDE.md" > "$PROJECT_ROOT/CLAUDE.md.tmp"
+    mv "$PROJECT_ROOT/CLAUDE.md.tmp" "$PROJECT_ROOT/CLAUDE.md"
+    echo "  ✓ CLAUDE.md updated with Speckit workflow requirements (inserted at MANUAL ADDITIONS)"
+  else
+    # No markers - append to end of file with markers
+    cat >> "$PROJECT_ROOT/CLAUDE.md" << EOF
+
+<!-- SPECKIT ADDITIONS START -->
+
+$SPECKIT_CONTENT
+
+<!-- SPECKIT ADDITIONS END -->
+EOF
+    echo "  ✓ CLAUDE.md updated with Speckit workflow requirements (appended)"
+  fi
+else
+  # File doesn't exist - create it fresh
+  cat > "$PROJECT_ROOT/CLAUDE.md" << EOF
+# Project Development Guidelines
+
+$SPECKIT_CONTENT
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
 EOF
-
-echo "  ✓ CLAUDE.md created with Speckit workflow requirements"
+  echo "  ✓ CLAUDE.md created with Speckit workflow requirements"
+fi
 
 #===============================================================================
 # Create Feature Spec Template
