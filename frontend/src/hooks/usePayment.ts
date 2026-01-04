@@ -8,7 +8,7 @@
 import { useState } from 'react';
 import { useFeature } from '@/providers/feature-flag-provider';
 import { Feature } from '@study-abroad/shared-feature-flags';
-import { api } from '@/lib/api-client';
+import { useAuthenticatedApi } from './useAuthenticatedApi';
 import { logInfo, logError } from '@/lib/logger';
 
 interface UsePaymentOptions {
@@ -32,6 +32,7 @@ export function usePayment(options: UsePaymentOptions): UsePaymentReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const paymentsEnabled = useFeature(Feature.PAYMENTS);
+  const { post: authPost } = useAuthenticatedApi();
 
   const createCheckout = async (query: string) => {
     setIsLoading(true);
@@ -47,7 +48,7 @@ export function usePayment(options: UsePaymentOptions): UsePaymentReturn {
           id?: string;
         }
 
-        const response = await api.post<CreateReportResponse>(apiEndpoint, { query });
+        const response = await authPost<CreateReportResponse>(apiEndpoint, { query });
 
         if (response.error) {
           throw new Error(response.error.message);
@@ -67,7 +68,7 @@ export function usePayment(options: UsePaymentOptions): UsePaymentReturn {
           checkoutUrl?: string;
         }
 
-        const response = await api.post<CheckoutResponse>(apiEndpoint, { query });
+        const response = await authPost<CheckoutResponse>(apiEndpoint, { query });
 
         if (response.error) {
           throw new Error(response.error.message);

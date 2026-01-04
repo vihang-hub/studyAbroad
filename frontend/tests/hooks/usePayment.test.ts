@@ -9,6 +9,25 @@ import { usePayment } from '../../src/hooks/usePayment';
 import * as apiClient from '../../src/lib/api-client';
 import * as logger from '../../src/lib/logger';
 
+// Mock Clerk's useAuth
+const mockGetToken = vi.fn().mockResolvedValue('mock-auth-token');
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({
+    getToken: mockGetToken,
+    isSignedIn: true,
+    isLoaded: true,
+  }),
+}));
+
+// Mock feature flags module
+vi.mock('@study-abroad/shared-feature-flags', () => ({
+  Feature: {
+    PAYMENTS: 'payments',
+    SUPABASE: 'supabase',
+    AI_STREAMING: 'ai_streaming',
+  },
+}));
+
 // Mock dependencies
 vi.mock('../../src/providers/feature-flag-provider', () => ({
   useFeature: vi.fn(),
@@ -17,6 +36,10 @@ vi.mock('../../src/providers/feature-flag-provider', () => ({
 vi.mock('../../src/lib/api-client', () => ({
   api: {
     post: vi.fn(),
+    get: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -35,7 +58,7 @@ describe('usePayment', () => {
   const mockLogError = vi.mocked(logger.logError);
 
   const defaultOptions = {
-    apiEndpoint: '/api/reports/initiate',
+    apiEndpoint: '/reports/initiate',
     onSuccess: vi.fn(),
     onError: vi.fn(),
   };
@@ -82,9 +105,11 @@ describe('usePayment', () => {
         expect.objectContaining({ query: 'UK study visa requirements' }),
       );
 
-      expect(mockApiPost).toHaveBeenCalledWith('/api/reports/initiate', {
-        query: 'UK study visa requirements',
-      });
+      expect(mockApiPost).toHaveBeenCalledWith(
+        '/reports/initiate',
+        { query: 'UK study visa requirements' },
+        expect.objectContaining({ authToken: 'mock-auth-token' }),
+      );
 
       expect(defaultOptions.onSuccess).toHaveBeenCalledWith(reportId);
     });
@@ -248,9 +273,11 @@ describe('usePayment', () => {
         expect.objectContaining({ query: 'UK study visa' }),
       );
 
-      expect(mockApiPost).toHaveBeenCalledWith('/api/reports/initiate', {
-        query: 'UK study visa',
-      });
+      expect(mockApiPost).toHaveBeenCalledWith(
+        '/reports/initiate',
+        { query: 'UK study visa' },
+        expect.objectContaining({ authToken: 'mock-auth-token' }),
+      );
 
       expect(window.location.href).toBe(checkoutUrl);
     });
@@ -311,7 +338,7 @@ describe('usePayment', () => {
 
     it('should work without onSuccess callback', async () => {
       const optionsWithoutSuccess = {
-        apiEndpoint: '/api/reports/initiate',
+        apiEndpoint: '/reports/initiate',
       };
 
       mockApiPost.mockResolvedValueOnce({
@@ -331,7 +358,7 @@ describe('usePayment', () => {
 
     it('should work without onError callback', async () => {
       const optionsWithoutError = {
-        apiEndpoint: '/api/reports/initiate',
+        apiEndpoint: '/reports/initiate',
       };
 
       mockApiPost.mockResolvedValueOnce({
@@ -353,7 +380,7 @@ describe('usePayment', () => {
       const callOrder: string[] = [];
 
       const options = {
-        apiEndpoint: '/api/reports/initiate',
+        apiEndpoint: '/reports/initiate',
         onSuccess: vi.fn(() => callOrder.push('onSuccess')),
         onError: vi.fn(() => callOrder.push('onError')),
       };
@@ -414,7 +441,7 @@ describe('usePayment', () => {
     it('should use custom API endpoint', async () => {
       const customOptions = {
         ...defaultOptions,
-        apiEndpoint: '/api/custom/endpoint',
+        apiEndpoint: '/custom/endpoint',
       };
 
       mockApiPost.mockResolvedValueOnce({
@@ -428,9 +455,11 @@ describe('usePayment', () => {
         await result.current.createCheckout('UK study');
       });
 
-      expect(mockApiPost).toHaveBeenCalledWith('/api/custom/endpoint', {
-        query: 'UK study',
-      });
+      expect(mockApiPost).toHaveBeenCalledWith(
+        '/custom/endpoint',
+        { query: 'UK study' },
+        expect.anything(),
+      );
     });
   });
 });

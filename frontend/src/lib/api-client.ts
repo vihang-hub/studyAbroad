@@ -27,6 +27,7 @@ export interface ApiResponse<T = unknown> {
 export interface FetchOptions extends RequestInit {
   timeout?: number;
   correlationId?: string;
+  authToken?: string;
 }
 
 /**
@@ -50,10 +51,15 @@ export async function fetchApi<T = unknown>(
   logApiRequest(method, endpoint, { correlationId });
 
   try {
-    // Add correlation ID to headers
+    // Add correlation ID and auth headers
     const headers = new Headers(options.headers);
     headers.set('X-Correlation-ID', correlationId);
     headers.set('Content-Type', 'application/json');
+
+    // Add Authorization header if token provided
+    if (options.authToken) {
+      headers.set('Authorization', `Bearer ${options.authToken}`);
+    }
 
     // Make the request with timeout
     const controller = new AbortController();

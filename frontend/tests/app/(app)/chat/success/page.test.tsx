@@ -116,7 +116,7 @@ describe('PaymentSuccessPage', () => {
         await Promise.resolve();
       });
 
-      expect(mockApiGet).toHaveBeenCalledWith('/api/reports/test-report-123');
+      expect(mockApiGet).toHaveBeenCalledWith('/reports/test-report-123');
     });
 
     it('should redirect to report when completed', async () => {

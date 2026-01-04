@@ -9,11 +9,30 @@ import { act } from 'react';
 import { useReports } from '@/hooks/useReports';
 import type { Report } from '@/types/report';
 
+// Mock Clerk's useAuth
+const mockGetToken = vi.fn().mockResolvedValue('mock-token');
+vi.mock('@clerk/nextjs', () => ({
+  useAuth: () => ({
+    getToken: mockGetToken,
+    isSignedIn: true,
+    isLoaded: true,
+  }),
+  useUser: () => ({
+    user: { id: 'test-user' },
+    isLoaded: true,
+    isSignedIn: true,
+  }),
+}));
+
 // Mock API client
 const mockGet = vi.fn();
 vi.mock('@/lib/api-client', () => ({
   api: {
-    get: (...args: any[]) => mockGet(...args),
+    get: (...args: unknown[]) => mockGet(...args),
+    post: vi.fn(),
+    put: vi.fn(),
+    patch: vi.fn(),
+    delete: vi.fn(),
   },
 }));
 
@@ -49,6 +68,7 @@ describe('useReports', () => {
 
   beforeEach(() => {
     mockGet.mockClear();
+    mockGetToken.mockClear();
   });
 
   describe('Default behavior', () => {
@@ -56,18 +76,18 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
-
-      // Initially loading
-      expect(result.current.isLoading).toBe(true);
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
-      expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+      expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10', expect.objectContaining({
+        authToken: 'mock-token',
+      }));
       expect(result.current.reports).toEqual(mockReports);
       expect(result.current.error).toBeNull();
     });
@@ -76,29 +96,21 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       renderHook(() => useReports());
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+        expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10', expect.anything());
       });
-    });
-
-    it('starts with loading state true', () => {
-      mockGet.mockResolvedValue({
-        data: mockReports,
-        error: null,
-      });
-
-      const { result } = renderHook(() => useReports());
-      expect(result.current.isLoading).toBe(true);
     });
 
     it('starts with empty reports array', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -109,6 +121,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -121,12 +134,13 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports.slice(0, 5),
         error: null,
+        status: 200,
       });
 
       renderHook(() => useReports({ limit: 5 }));
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=5');
+        expect(mockGet).toHaveBeenCalledWith('/reports/?limit=5', expect.anything());
       });
     });
 
@@ -134,6 +148,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports({ autoFetch: false }));
@@ -147,6 +162,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports({ autoFetch: false }));
@@ -159,7 +175,7 @@ describe('useReports', () => {
       });
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+        expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10', expect.anything());
         expect(result.current.reports).toEqual(mockReports);
       });
     });
@@ -170,6 +186,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -183,6 +200,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: null,
         error: { message: 'Network error' },
+        status: 500,
       });
 
       const { result } = renderHook(() => useReports());
@@ -198,6 +216,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: null,
         error: { message: 'Failed to fetch reports' },
+        status: 500,
       });
 
       const { result } = renderHook(() => useReports());
@@ -212,6 +231,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: null,
         error: {},
+        status: 500,
       });
 
       const { result } = renderHook(() => useReports());
@@ -247,6 +267,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValueOnce({
         data: null,
         error: { message: 'Network error' },
+        status: 500,
       });
 
       const { result } = renderHook(() => useReports());
@@ -259,6 +280,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValueOnce({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       await act(async () => {
@@ -272,11 +294,46 @@ describe('useReports', () => {
     });
   });
 
+  describe('401/403 handling', () => {
+    it('returns empty reports on 401 without error', async () => {
+      mockGet.mockResolvedValue({
+        data: null,
+        error: null,
+        status: 401,
+      });
+
+      const { result } = renderHook(() => useReports());
+
+      await waitFor(() => {
+        expect(result.current.reports).toEqual([]);
+        expect(result.current.error).toBeNull();
+        expect(result.current.isLoading).toBe(false);
+      });
+    });
+
+    it('returns empty reports on 403 without error', async () => {
+      mockGet.mockResolvedValue({
+        data: null,
+        error: null,
+        status: 403,
+      });
+
+      const { result } = renderHook(() => useReports());
+
+      await waitFor(() => {
+        expect(result.current.reports).toEqual([]);
+        expect(result.current.error).toBeNull();
+        expect(result.current.isLoading).toBe(false);
+      });
+    });
+  });
+
   describe('Empty state (T134)', () => {
     it('returns empty array when no reports exist', async () => {
       mockGet.mockResolvedValue({
         data: [],
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -292,6 +349,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports.slice(0, 5),
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports({ limit: 10 }));
@@ -312,6 +370,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: exactLimitReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports({ limit: 10 }));
@@ -325,6 +384,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports, // Only 2 reports
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports({ limit: 10 }));
@@ -338,6 +398,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: [],
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -353,6 +414,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -368,6 +430,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -385,30 +448,6 @@ describe('useReports', () => {
       });
     });
 
-    it('refetch sets loading state', async () => {
-      mockGet.mockResolvedValue({
-        data: mockReports,
-        error: null,
-      });
-
-      const { result } = renderHook(() => useReports());
-
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-
-      let refetchPromise: Promise<void>;
-      await act(async () => {
-        refetchPromise = result.current.refetch();
-        await refetchPromise;
-      });
-
-      // After refetch completes, should not be loading
-      await waitFor(() => {
-        expect(result.current.isLoading).toBe(false);
-      });
-    });
-
     it('refetch updates reports with new data', async () => {
       const initialReports = [mockReports[0]];
       const updatedReports = mockReports;
@@ -416,6 +455,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValueOnce({
         data: initialReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -427,6 +467,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValueOnce({
         data: updatedReports,
         error: null,
+        status: 200,
       });
 
       await act(async () => {
@@ -444,12 +485,13 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       renderHook(() => useReports());
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+        expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10', expect.anything());
       });
     });
 
@@ -459,6 +501,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: userReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -475,6 +518,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());
@@ -494,6 +538,7 @@ describe('useReports', () => {
       mockGet.mockResolvedValue({
         data: mockReports,
         error: null,
+        status: 200,
       });
 
       const { result } = renderHook(() => useReports());

@@ -3,8 +3,10 @@
  * T120: Report history fetching with pagination support
  */
 
+'use client';
+
 import { useState, useEffect, useCallback } from 'react';
-import { api } from '@/lib/api-client';
+import { useAuthenticatedApi } from './useAuthenticatedApi';
 import type { Report } from '@/types/report';
 
 export interface UseReportsOptions {
@@ -33,13 +35,27 @@ export function useReports(options: UseReportsOptions = {}): UseReportsResult {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
 
+  const { get: authGet, isSignedIn, isLoaded } = useAuthenticatedApi();
+
   const fetchReports = useCallback(async () => {
+    // Don't fetch if auth not loaded yet
+    if (!isLoaded) {
+      return;
+    }
+
+    // Don't fetch if not signed in
+    if (!isSignedIn) {
+      setReports([]);
+      setHasMore(false);
+      return;
+    }
+
     try {
       setIsLoading(true);
       setError(null);
 
       const endpoint = `/reports/?limit=${limit}`;
-      const response = await api.get<Report[]>(endpoint);
+      const response = await authGet<Report[]>(endpoint);
 
       // Handle 401/403 gracefully - user not authenticated, return empty list
       if (response.status === 401 || response.status === 403) {
@@ -64,13 +80,13 @@ export function useReports(options: UseReportsOptions = {}): UseReportsResult {
     } finally {
       setIsLoading(false);
     }
-  }, [limit]);
+  }, [limit, authGet, isSignedIn, isLoaded]);
 
   useEffect(() => {
-    if (autoFetch) {
+    if (autoFetch && isLoaded) {
       fetchReports();
     }
-  }, [autoFetch, fetchReports]);
+  }, [autoFetch, fetchReports, isLoaded]);
 
   return {
     reports,
