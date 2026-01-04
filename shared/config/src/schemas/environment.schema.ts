@@ -48,11 +48,21 @@ export const ReportStatus = z.enum(['generating', 'completed', 'failed']);
 export type ReportStatus = z.infer<typeof ReportStatus>;
 
 /**
- * Database Configuration Schema
+ * Helper to detect if running in browser context
+ * Uses typeof check which works in both browser and Node.js
+ */
+export const isClientContext = (): boolean => {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+  return typeof globalThis !== 'undefined' && typeof (globalThis as typeof globalThis & { window?: unknown }).window !== 'undefined';
+};
+
+/**
+ * Database Configuration Schema (Server-side)
+ * DATABASE_URL is required on server, optional on client
  */
 const DatabaseConfigSchema = z.object({
-  /** Database connection URL */
-  DATABASE_URL: z.string().url().describe('PostgreSQL or Supabase connection URL'),
+  /** Database connection URL - required on server, optional on client */
+  DATABASE_URL: z.string().url().optional().describe('PostgreSQL or Supabase connection URL'),
 
   /** Supabase URL (required when ENABLE_SUPABASE=true) */
   SUPABASE_URL: z.string().url().optional().describe('Supabase project URL'),
@@ -118,13 +128,14 @@ const FeatureFlagsConfigSchema = z.object({
 
 /**
  * Clerk Authentication Configuration Schema
+ * Server-only fields (CLERK_SECRET_KEY) are optional in base schema
  */
 const ClerkConfigSchema = z.object({
   /** Clerk publishable key (frontend) */
   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().min(1).describe('Clerk publishable key'),
 
-  /** Clerk secret key (backend) */
-  CLERK_SECRET_KEY: z.string().min(1).describe('Clerk secret key'),
+  /** Clerk secret key (backend) - optional in base schema, validated server-side */
+  CLERK_SECRET_KEY: z.string().optional().describe('Clerk secret key'),
 
   /** Clerk webhook secret for signature verification */
   CLERK_WEBHOOK_SECRET: z.string().optional().describe('Clerk webhook secret'),
@@ -167,10 +178,11 @@ const StripeConfigSchema = z.object({
 
 /**
  * Gemini AI Configuration Schema
+ * Server-only - GEMINI_API_KEY is optional in base schema
  */
 const GeminiConfigSchema = z.object({
-  /** Google AI API key */
-  GEMINI_API_KEY: z.string().min(1).describe('Google Gemini API key'),
+  /** Google AI API key - optional in base schema, validated server-side */
+  GEMINI_API_KEY: z.string().optional().describe('Google Gemini API key'),
 
   /** Gemini model to use */
   GEMINI_MODEL: z.string().default('gemini-1.5-pro'),

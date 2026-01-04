@@ -3,19 +3,37 @@
  *
  * Loads and validates environment configuration using Zod schemas.
  * Implements singleton pattern for performance.
+ * Supports context-aware validation (client vs server).
  *
  * @module shared/config/loader
  */
 
-import { EnvironmentConfigSchema, type EnvironmentConfig } from './schemas/environment.schema';
+import {
+  EnvironmentConfigSchema,
+  type EnvironmentConfig,
+  isClientContext,
+} from './schemas/environment.schema';
 
 /**
  * Configuration Loader Class
  *
  * Provides singleton access to validated environment configuration.
+ * Performs context-aware validation:
+ * - Client-side: Only validates client-accessible variables
+ * - Server-side: Validates all variables including secrets
  */
 export class ConfigLoader {
   private static instance: EnvironmentConfig | null = null;
+
+  /**
+   * Required fields for server-side context
+   * These are validated only when running on server
+   */
+  private static readonly SERVER_REQUIRED_FIELDS = [
+    'DATABASE_URL',
+    'CLERK_SECRET_KEY',
+    'GEMINI_API_KEY',
+  ] as const;
 
   /**
    * Load and validate environment configuration
@@ -24,6 +42,10 @@ export class ConfigLoader {
    * On validation failure, it logs detailed error messages and throws.
    * Subsequent calls return the cached instance for performance.
    *
+   * Context-aware validation:
+   * - On server: DATABASE_URL, CLERK_SECRET_KEY, GEMINI_API_KEY are required
+   * - On client: These fields are optional (not available in browser)
+   *
    * @throws {Error} If configuration validation fails
    * @returns Validated configuration object
    */
@@ -31,6 +53,8 @@ export class ConfigLoader {
     if (this.instance) {
       return this.instance;
     }
+
+    const isClient = isClientContext();
 
     // Gather raw environment variables
     const rawConfig = {
@@ -110,6 +134,27 @@ export class ConfigLoader {
       throw new Error(
         'Invalid environment configuration. Please check your environment variables.'
       );
+    }
+
+    // Server-side only: Validate required server fields
+    if (!isClient) {
+      const missingServerFields: string[] = [];
+
+      for (const field of this.SERVER_REQUIRED_FIELDS) {
+        const value = result.data[field as keyof EnvironmentConfig];
+        if (!value || (typeof value === 'string' && value.trim() === '')) {
+          missingServerFields.push(field);
+        }
+      }
+
+      if (missingServerFields.length > 0) {
+        console.error('❌ Server-side configuration validation failed:');
+        console.error(`Missing required server fields: ${missingServerFields.join(', ')}`);
+        throw new Error(
+          `Missing required server environment variables: ${missingServerFields.join(', ')}. ` +
+            'These are required for server-side operation.'
+        );
+      }
     }
 
     this.instance = result.data;

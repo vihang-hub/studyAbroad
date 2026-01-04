@@ -124,15 +124,15 @@ describe('ConfigLoader', () => {
       expect(config.APP_NAME).toBe('Study Abroad MVP');
     });
 
-    it('should throw on missing required DATABASE_URL', () => {
-      // Arrange
+    it('should throw on missing required DATABASE_URL (server-side validation)', () => {
+      // Arrange - In Node.js test environment, we're on server-side
       process.env.ENVIRONMENT_MODE = 'dev';
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
       process.env.CLERK_SECRET_KEY = 'sk_test_123';
       process.env.GEMINI_API_KEY = 'test_key';
 
-      // Act & Assert
-      expect(() => ConfigLoader.load()).toThrow('Invalid environment configuration');
+      // Act & Assert - Server-side validation catches missing DATABASE_URL
+      expect(() => ConfigLoader.load()).toThrow('Missing required server environment variables');
     });
 
     it('should throw on invalid DATABASE_URL', () => {
@@ -147,26 +147,26 @@ describe('ConfigLoader', () => {
       expect(() => ConfigLoader.load()).toThrow('Invalid environment configuration');
     });
 
-    it('should throw on missing CLERK_SECRET_KEY', () => {
-      // Arrange
+    it('should throw on missing CLERK_SECRET_KEY (server-side validation)', () => {
+      // Arrange - In Node.js test environment, we're on server-side
       process.env.ENVIRONMENT_MODE = 'dev';
       process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
       process.env.GEMINI_API_KEY = 'test_key';
 
-      // Act & Assert
-      expect(() => ConfigLoader.load()).toThrow('Invalid environment configuration');
+      // Act & Assert - Server-side validation catches missing CLERK_SECRET_KEY
+      expect(() => ConfigLoader.load()).toThrow('Missing required server environment variables');
     });
 
-    it('should throw on missing GEMINI_API_KEY', () => {
-      // Arrange
+    it('should throw on missing GEMINI_API_KEY (server-side validation)', () => {
+      // Arrange - In Node.js test environment, we're on server-side
       process.env.ENVIRONMENT_MODE = 'dev';
       process.env.DATABASE_URL = 'postgresql://localhost:5432/test';
       process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = 'pk_test_123';
       process.env.CLERK_SECRET_KEY = 'sk_test_123';
 
-      // Act & Assert
-      expect(() => ConfigLoader.load()).toThrow('Invalid environment configuration');
+      // Act & Assert - Server-side validation catches missing GEMINI_API_KEY
+      expect(() => ConfigLoader.load()).toThrow('Missing required server environment variables');
     });
 
     it('should enforce dev mode constraints (no Supabase, no payments)', () => {
