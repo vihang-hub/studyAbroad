@@ -386,35 +386,99 @@ cat > "$PROJECT_ROOT/agents/checklists/Gate2-Design.md" << 'EOF'
 **Date**: _{date}_
 **Agent**: designer
 
+---
+
 ## Prerequisites
 
 - [ ] Gate1-Architecture.md passed
-- [ ] Architecture documents reviewed
+- [ ] spec.md approved with acceptance criteria
+- [ ] System overview and ADRs exist
+
+---
 
 ## API Design
 
-- [ ] docs/api/openapi.yaml created
+### OpenAPI Specification
+
+- [ ] `docs/api/openapi.yaml` exists
 - [ ] All endpoints documented
 - [ ] Request/response schemas defined
-- [ ] Error responses standardized
 - [ ] Authentication requirements specified
+- [ ] Error responses documented
 
-## Data Model
+### Endpoint Inventory
 
-- [ ] Database schema defined
-- [ ] Entity relationships documented
-- [ ] Indexes planned
-- [ ] Migration strategy defined
+| Endpoint | Method | Auth Required | Request Schema | Response Schema |
+|----------|--------|---------------|----------------|-----------------|
+| _{path}_ | GET/POST/etc | Yes/No | _{schema}_ | _{schema}_ |
 
-## UX Flows
+---
 
-- [ ] User flows documented
-- [ ] Edge cases considered
+## UI/UX Design
+
+### User Flows
+
+- [ ] `docs/ui/flows.md` exists
+- [ ] Primary user journey documented
 - [ ] Error states designed
+- [ ] Loading states designed
+- [ ] Edge cases covered
+
+---
+
+## Data Design
+
+### Schema Definition
+
+- [ ] `docs/data/schema.md` exists
+- [ ] All entities documented
+- [ ] Relationships defined
+- [ ] Indexes planned
+
+### Access Control
+
+- [ ] Row Level Security (RLS) policies defined
+- [ ] User isolation documented
+
+---
+
+## Contract Testing Requirements
+
+**CRITICAL**: Contracts must be defined BEFORE implementation to prevent frontend/backend mismatches.
+
+### API Path Contracts
+
+| Frontend Path | Backend Route | Match | Notes |
+|---------------|---------------|-------|-------|
+| _{path}_ | _{route}_ | ✅/❌ | _{notes}_ |
+
+### Authentication Contract
+
+| Aspect | Specification |
+|--------|---------------|
+| Header Name | `Authorization` |
+| Header Format | `Bearer {token}` |
+| Token Provider | _{provider}_ |
+| Token Retrieval | _{method}_ |
+
+### Contract Verification Approach
+
+- [ ] **Generated Types**: Types generated from OpenAPI spec (recommended)
+- [ ] **Contract Tests**: Tests verify contracts at build time
+- [ ] **Manual Verification**: Types manually kept in sync
+
+---
 
 ## Gate Result
 
 **Status**: ⏳ PENDING | ✅ PASS | ❌ FAIL
+
+**Contract Status**:
+| Contract Type | Status |
+|---------------|--------|
+| API Paths | ✅/❌ |
+| Request/Response | ✅/❌ |
+| Authentication | ✅/❌ |
 
 ---
 **Reviewed by**: designer agent
@@ -429,44 +493,226 @@ cat > "$PROJECT_ROOT/agents/checklists/Gate3-TestDesign.md" << 'EOF'
 **Date**: _{date}_
 **Agent**: test-designer
 
+---
+
 ## Prerequisites
 
 - [ ] Gate2-Design.md passed
 - [ ] spec.md has acceptance criteria defined
-- [ ] docs/api/openapi.yaml exists
+- [ ] docs/api/openapi.yaml exists (API contracts)
+- [ ] docs/database/schema.sql exists (if DB changes)
 
-## Acceptance Criteria Coverage
+---
+
+## Phase 1: Test Infrastructure Prerequisites
+
+**CRITICAL**: Complete this section BEFORE writing any tests. Missing infrastructure blocks all testing.
+
+### Step 1: Identify Dependencies to Mock
+
+Analyze your codebase and list all external dependencies:
+
+| Dependency Type | Package/Service | Mock File | Status |
+|-----------------|-----------------|-----------|--------|
+| Auth provider | _{e.g., Clerk, Auth0, NextAuth}_ | tests/mocks/auth.ts | ⏳ |
+| External APIs | _{e.g., Stripe, Twilio, OpenAI}_ | tests/mocks/external-apis.ts | ⏳ |
+| Database | _{e.g., Supabase, Prisma, Postgres}_ | tests/mocks/database.ts | ⏳ |
+| Shared packages | _{e.g., @company/config, @company/logging}_ | tests/mocks/shared-packages.ts | ⏳ |
+| Environment/Config | _{e.g., env vars, feature flags}_ | tests/setup.ts | ⏳ |
+
+### Step 2: Create Mock Infrastructure
+
+- [ ] `tests/mocks/` directory exists
+- [ ] Each dependency has a mock implementation
+- [ ] Mock exports match real interface signatures exactly
+- [ ] `tests/setup.ts` imports and registers all mocks
+- [ ] Mock data fixtures created in `tests/fixtures/`
+
+### Step 3: Verify Infrastructure Works
+
+```bash
+# Run test framework with no tests to verify setup
+npx vitest run --passWithNoTests  # or: pytest --collect-only
+```
+
+- [ ] Test runner starts without import errors
+- [ ] No "module not found" errors for mocked packages
+- [ ] No configuration/environment errors
+- [ ] Framework reports "0 tests" (not errors)
+
+**BLOCKING**: Do not proceed to Phase 2 until infrastructure verification passes.
+
+---
+
+## Phase 2: Integration Boundary Tests
+
+Test the boundaries between major components BEFORE unit tests.
+
+### Identify Architecture Boundaries
+
+| Boundary | Components | Risk Level | Test File |
+|----------|------------|------------|-----------|
+| Auth → API | _{auth provider → api client}_ | HIGH | tests/integration/auth-api.test.ts |
+| Frontend → Backend | _{fetch calls → API routes}_ | HIGH | tests/integration/api-contracts.test.ts |
+| App → Database | _{repositories → database}_ | MEDIUM | tests/integration/database.test.ts |
+| Config → Runtime | _{config loader → app code}_ | MEDIUM | tests/integration/config.test.ts |
+
+### Boundary Test Requirements
+
+For each HIGH risk boundary:
+- [ ] Integration test file exists
+- [ ] Happy path tested (data flows correctly)
+- [ ] Error path tested (failures handled gracefully)
+- [ ] Both sides of boundary verified
+
+### Example Boundary Test Pattern
+
+```typescript
+// tests/integration/auth-api.test.ts
+describe('Auth → API Integration', () => {
+  it('authenticated requests include auth header', async () => {
+    // Setup: Mock auth to return token
+    // Action: Call API method
+    // Assert: Request included Authorization header
+  });
+
+  it('unauthenticated requests are rejected', async () => {
+    // Setup: Clear auth state
+    // Action: Call protected endpoint
+    // Assert: 401 response received
+  });
+});
+```
+
+---
+
+## Phase 3: Environment Matrix Testing
+
+Test code in all environments where it will run.
+
+### Identify Target Environments
+
+| Environment | Characteristics | Test Config |
+|-------------|-----------------|-------------|
+| Server (Node.js) | Full env vars, no window | `@vitest-environment node` |
+| Client (Browser) | Limited env, window exists | `@vitest-environment jsdom` |
+| Edge (if applicable) | Restricted APIs | `@vitest-environment edge-runtime` |
+
+### Environment-Specific Tests
+
+- [ ] Server-only code tested in Node environment
+- [ ] Client-only code tested in jsdom environment
+- [ ] Shared code tested in both environments
+- [ ] Environment detection logic tested
+
+### Example Environment Tests
+
+```typescript
+// tests/environments/config-client.test.ts
+/**
+ * @vitest-environment jsdom
+ */
+describe('Config in Client Environment', () => {
+  it('initializes without server-only variables', () => {
+    // Server vars (DATABASE_URL, API_KEYS) not required
+  });
+});
+
+// tests/environments/config-server.test.ts
+/**
+ * @vitest-environment node
+ */
+describe('Config in Server Environment', () => {
+  it('requires server variables', () => {
+    // Server vars must be present
+  });
+});
+```
+
+---
+
+## Phase 4: Acceptance Criteria Coverage
+
+Map each acceptance criterion from spec.md to tests:
 
 | AC ID | Description | Test File | Test Function | Status |
 |-------|-------------|-----------|---------------|--------|
-| AC-1  | _{desc}_ | _{path}_ | _{func}_ | ⏳ |
+| AC-1  | _{description}_ | _{path}_ | _{function}_ | ⏳/✅/❌ |
+| AC-2  | _{description}_ | _{path}_ | _{function}_ | ⏳/✅/❌ |
 
-## Test Categories
+---
+
+## Phase 5: Unit Test Categories
 
 ### Unit Tests
 - [ ] Backend services have unit tests
 - [ ] Frontend components have unit tests
-- [ ] Mocks/stubs properly isolated
-
-### Integration Tests
-- [ ] API endpoints tested
-- [ ] Database operations tested
+- [ ] Shared packages have unit tests
+- [ ] Each unit test uses mocks (no real dependencies)
 
 ### Edge Cases
-- [ ] Invalid input handling
-- [ ] Error scenarios
-- [ ] Boundary conditions
+- [ ] Invalid input handling tested
+- [ ] Error scenarios tested
+- [ ] Boundary conditions tested
+- [ ] Empty/null states tested
+
+---
+
+## Phase 6: Test Quality Standards
+
+- [ ] Tests are deterministic (no flaky tests)
+- [ ] Tests are independent (can run in any order)
+- [ ] Tests have clear assertions (one concept per test)
+- [ ] Tests have descriptive names (describe what, not how)
+- [ ] Test data fixtures are defined and reusable
+
+---
 
 ## TDD Verification
 
-- [ ] Tests written BEFORE implementation
-- [ ] All tests initially FAIL
+- [ ] Tests written BEFORE implementation code
+- [ ] All tests initially FAIL (RED phase)
+- [ ] Tests verify behavior, not implementation details
+
+---
+
+## Artifacts Created
+
+- [ ] `tests/mocks/` - Mock implementations
+- [ ] `tests/fixtures/` - Test data
+- [ ] `tests/setup.ts` - Test configuration
+- [ ] `tests/integration/` - Boundary tests
+- [ ] `docs/testing/test-strategy.md` - Test approach
+- [ ] `docs/testing/acceptance-criteria-mapping.md` - AC traceability
+
+---
 
 ## Gate Result
 
 **Status**: ⏳ PENDING | ✅ PASS | ❌ FAIL
 
+**Phase Completion**:
+| Phase | Status |
+|-------|--------|
+| 1. Test Infrastructure | ⏳/✅/❌ |
+| 2. Integration Boundaries | ⏳/✅/❌ |
+| 3. Environment Matrix | ⏳/✅/❌ |
+| 4. AC Coverage | ⏳/✅/❌ |
+| 5. Unit Tests | ⏳/✅/❌ |
+| 6. Quality Standards | ⏳/✅/❌ |
+
+**Summary**:
+- Test infrastructure verified: _{yes/no}_
+- Boundaries tested: _{count}_
+- Environments covered: _{list}_
+- Acceptance criteria mapped: _{count}/{total}_
+- Estimated coverage: _{percent}_
+
+**Notes**:
+_{any issues, decisions, or blockers}_
+
 ---
+
 **Reviewed by**: test-designer agent
 **Date**: _{date}_
 EOF
@@ -479,36 +725,232 @@ cat > "$PROJECT_ROOT/agents/checklists/Gate4-Implementation.md" << 'EOF'
 **Date**: _{date}_
 **Agent**: coder
 
+---
+
 ## Prerequisites
 
-- [ ] Gate3-TestDesign.md passed (or skipped with justification)
-- [ ] tasks.md exists with task breakdown
+- [ ] Gate3-TestDesign.md passed
+- [ ] Test infrastructure verified (mocks, fixtures, setup)
+- [ ] Tests exist and FAIL (TDD RED phase)
+- [ ] tasks.md generated with implementation tasks
 
-## Implementation Progress
+---
 
-| Task ID | Description | Status | Notes |
-|---------|-------------|--------|-------|
-| T001 | _{desc}_ | ⏳/✅/❌ | |
+## Implementation Rules
 
-## Code Quality
+### Core Requirements
 
-- [ ] Follows coding standards
-- [ ] No linting errors
-- [ ] Type safety enforced
-- [ ] No hardcoded secrets
+- [ ] Code implements ONLY what is specified in specs/
+- [ ] Unit tests added/updated for all changes
+- [ ] No secrets committed (use environment variables)
+- [ ] No undocumented features or "improvements"
 
-## Tests
+### TDD Compliance
 
-- [ ] Unit tests pass
-- [ ] Integration tests pass
-- [ ] Coverage meets threshold (≥90%)
+- [ ] Each task follows RED → GREEN → REFACTOR
+- [ ] Tests pass after implementation (GREEN phase)
+- [ ] Code refactored while keeping tests green
+
+---
+
+## Continuous Validation Checkpoints
+
+**CRITICAL**: Validation must pass after every implementation batch. Errors accumulate and become harder to fix.
+
+### Checkpoint Commands
+
+Run these commands after every 3-5 tasks (or after each complex task):
+
+**TypeScript/JavaScript Projects:**
+```bash
+# Type checking - MUST exit 0
+npm run typecheck   # or: npx tsc --noEmit
+
+# Linting - MUST exit 0 (warnings OK)
+npm run lint        # or: npx eslint .
+
+# Build verification - MUST exit 0
+npm run build       # or: npx next build
+```
+
+**Python Projects:**
+```bash
+# Type checking - MUST exit 0
+mypy src/           # or: pyright src/
+
+# Linting - MUST exit 0
+ruff check src/     # or: flake8 src/
+
+# Import verification
+python -c "from src import main"
+```
+
+**Multi-Package/Monorepo:**
+```bash
+# Run for each package
+cd frontend && npm run typecheck && npm run lint && npm run build
+cd backend && ruff check src && mypy src
+cd shared && npm run typecheck && npm run lint
+```
+
+### Checkpoint Frequency
+
+| Task Complexity | Lines Changed | Checkpoint After |
+|-----------------|---------------|------------------|
+| Simple | < 50 LOC | Every 5 tasks |
+| Medium | 50-200 LOC | Every 3 tasks |
+| Complex | > 200 LOC | Every task |
+| Refactoring | Any | Every task |
+
+### Validation Log
+
+Track checkpoint results:
+
+| Checkpoint | Tasks | TypeCheck | Lint | Build | Tests | Status |
+|------------|-------|-----------|------|-------|-------|--------|
+| CP-1 | T001-T005 | ✅ | ✅ | ✅ | ✅ | PASS |
+| CP-2 | T006-T010 | _{result}_ | _{result}_ | _{result}_ | _{result}_ | _{status}_ |
+
+### Enforcement Rules
+
+**BLOCKING**: If any validation fails:
+
+1. **STOP** implementation immediately
+2. **FIX** the validation error before continuing
+3. **RE-RUN** all validation commands
+4. **VERIFY** all pass before proceeding
+
+**NO DEFERRAL** is allowed for:
+- Type errors (breaks build)
+- Import errors (breaks runtime)
+- Build failures (blocks deployment)
+
+**Deferral allowed ONLY for** (with documented rationale):
+- Linting warnings (not errors)
+- Style issues
+- Documentation gaps
+
+---
+
+## Task Execution Tracking
+
+| Task ID | Description | Tests Pass | Validation | Status |
+|---------|-------------|------------|------------|--------|
+| T001 | _{description}_ | ✅/❌ | ✅/❌ | ⏳/✅/❌ |
+| T002 | _{description}_ | ✅/❌ | ✅/❌ | ⏳/✅/❌ |
+
+---
+
+## Code Quality Standards
+
+### Clean Code
+- [ ] Functions are small and single-responsibility
+- [ ] Variable names are descriptive
+- [ ] No magic numbers or strings
+- [ ] Complex logic has comments explaining WHY
+
+### Architecture
+- [ ] Code follows existing patterns in codebase
+- [ ] New patterns documented in ADR if introduced
+- [ ] Dependencies injected, not hardcoded
+- [ ] No circular dependencies
+
+### Security
+- [ ] Input validation on all user data
+- [ ] No SQL injection vulnerabilities
+- [ ] No XSS vulnerabilities
+- [ ] Secrets in environment variables only
+
+---
+
+## Commit Discipline
+
+### Commit Frequency
+- [ ] Commit after each logical unit of work
+- [ ] Each commit passes all validations
+- [ ] Commit messages follow conventional format
+
+### Commit Message Format
+```
+type(scope): description
+
+- Detail 1
+- Detail 2
+
+Refs: T001, T002
+```
+
+Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`
+
+---
+
+## Progress Checkpoints
+
+### Batch 1 (Tasks T001-T010)
+- [ ] All tasks completed
+- [ ] Validation checkpoint passed
+- [ ] Tests passing
+- [ ] Committed
+
+### Batch 2 (Tasks T011-T020)
+- [ ] All tasks completed
+- [ ] Validation checkpoint passed
+- [ ] Tests passing
+- [ ] Committed
+
+_(Add more batches as needed)_
+
+---
+
+## Final Validation
+
+Before marking Gate4 complete:
+
+```bash
+# Full test suite
+npm test            # or: pytest
+
+# Full type check
+npm run typecheck   # or: mypy src/
+
+# Full lint
+npm run lint        # or: ruff check src/
+
+# Full build
+npm run build       # or: python -m build
+```
+
+- [ ] All tests pass
+- [ ] Type checking passes
+- [ ] Linting passes (0 errors)
+- [ ] Build succeeds
+- [ ] No uncommitted changes
+
+---
 
 ## Gate Result
 
 **Status**: ⏳ PENDING | ✅ PASS | ❌ FAIL
-**Progress**: _{completed}/{total}_ tasks
+
+**Summary**:
+- Tasks completed: _{count}/{total}_
+- Validation checkpoints passed: _{count}_
+- Tests passing: _{count}/{total}_
+- Coverage: _{percent}_
+
+**Validation Results**:
+| Check | Result |
+|-------|--------|
+| TypeCheck | ✅/❌ |
+| Lint | ✅/❌ |
+| Build | ✅/❌ |
+| Tests | ✅/❌ |
+
+**Notes**:
+_{any issues, decisions, deferred items with rationale}_
 
 ---
+
 **Reviewed by**: coder agent
 **Date**: _{date}_
 EOF
