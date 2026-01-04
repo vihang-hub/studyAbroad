@@ -1535,6 +1535,97 @@ EOF
 echo "  ✓ Constitution template created"
 
 #===============================================================================
+# Create CLAUDE.md with Speckit Workflow Requirements
+#===============================================================================
+echo -e "\n${GREEN}Creating CLAUDE.md...${NC}"
+
+cat > "$PROJECT_ROOT/CLAUDE.md" << 'EOF'
+# Project Development Guidelines
+
+## Speckit Workflow Requirements
+
+**CRITICAL**: ALL development activities MUST be framed within the Speckit framework.
+
+### Always Show Context
+
+When suggesting next steps or asking questions, ALWAYS include:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│ SPECKIT CONTEXT                                                 │
+├─────────────────────────────────────────────────────────────────┤
+│ Current Gate: Gate{N} - {GateName}                              │
+│ Agent: {agent_name}                                             │
+│ Skill: {skill_name} (if applicable)                             │
+│ Task: {current_task_id} - {description}                         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Gate → Agent → Skill Mapping
+
+| Gate | Name | Agent | Primary Skills |
+|------|------|-------|----------------|
+| Gate0 | Pre-Specification | - | `speckit.specify`, `superpowers:brainstorming` |
+| Gate1 | Architecture | `architect` | - |
+| Gate2 | Design | `designer` | `speckit.plan`, `superpowers:writing-plans` |
+| Gate3 | Test Design | `test-designer` | `superpowers:test-driven-development` |
+| Gate4 | Implementation | `coder` | `speckit.implement`, `superpowers:executing-plans`, `superpowers:dispatching-parallel-agents` |
+| Gate5 | QA | `qa-tester` | `superpowers:systematic-debugging`, `superpowers:verification-before-completion` |
+| Gate6 | Validation | `validator` | `superpowers:verification-before-completion` |
+| Gate7 | Security | `security-gate-engineer` | - |
+| Gate8 | Deployment | `devops-deployment-engineer` | `superpowers:finishing-a-development-branch` |
+
+### Presenting Options
+
+When presenting next step options, format as:
+
+```
+NEXT STEPS (Gate{N} - {GateName}):
+
+[1] {Action description}
+    → Agent: {agent}
+    → Skill: {skill}
+    → Command: {/command or "Use the {agent} agent to..."}
+
+[2] {Action description}
+    → Agent: {agent}
+    → Skill: {skill}
+    → Command: {/command}
+```
+
+### Activity Classification
+
+Before ANY activity, determine:
+1. Which gate does this belong to?
+2. Which agent should handle it?
+3. Which skill(s) apply?
+4. Is this a new feature (→ /speckit.specify) or continuation?
+
+### Session State
+
+Always check `.specify/session/state.json` to understand:
+- Current pipeline status
+- Active gate and progress
+- Next task in queue
+- Recent activity
+
+Use `/primer` at session start to load context.
+
+### Bug Fixes and Ad-Hoc Work
+
+Even bug fixes follow speckit:
+- Simple bug → Gate4 (coder) + `superpowers:systematic-debugging`
+- Test failures → Gate5 (qa-tester) + `superpowers:systematic-debugging`
+- Security issue → Gate7 (security-gate-engineer)
+- New feature request → Gate0 (start with /speckit.specify)
+
+<!-- MANUAL ADDITIONS START -->
+<!-- MANUAL ADDITIONS END -->
+EOF
+
+echo "  ✓ CLAUDE.md created with Speckit workflow requirements"
+
+#===============================================================================
 # Create Feature Spec Template
 #===============================================================================
 echo -e "\n${GREEN}Creating feature templates...${NC}"
