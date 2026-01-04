@@ -17,6 +17,7 @@ A comprehensive automated development workflow that combines specification-drive
 9. [Superpowers Integration](#superpowers-integration)
 10. [Configuration](#configuration)
 11. [Troubleshooting](#troubleshooting)
+12. [Testing Best Practices](#testing-best-practices) (NEW)
 
 ---
 
@@ -383,8 +384,14 @@ report       Trace        Scan         Production
 - [ ] Database schema defined
 - [ ] RLS policies documented
 - [ ] UX flows diagrammed
+- [ ] **Contract testing requirements defined** (NEW)
+- [ ] **Auth contract documented** (NEW)
 
 #### Gate3: Test Design (TDD)
+- [ ] **Test infrastructure created first** (NEW)
+- [ ] **Mock inventory complete** (NEW)
+- [ ] **Integration boundary tests defined** (NEW)
+- [ ] **Environment matrix identified** (NEW)
 - [ ] Test strategy documented
 - [ ] Acceptance criteria mapped to tests
 - [ ] Test stubs written (should FAIL)
@@ -395,6 +402,8 @@ report       Trace        Scan         Production
 - [ ] Code follows style guide
 - [ ] No security vulnerabilities
 - [ ] Documentation updated
+- [ ] **Continuous validation checkpoints passed** (NEW)
+- [ ] **No deferred type/build errors** (NEW)
 
 #### Gate5: QA
 - [ ] Coverage >= 90%
@@ -719,6 +728,89 @@ export CLAUDE_DEBUG=1
 
 ---
 
+## Testing Best Practices
+
+The speckit system enforces testing discipline through structured gates. These practices prevent common issues that block testing and cause integration failures.
+
+### Test Infrastructure First (Gate3)
+
+**Problem**: Tests written before infrastructure exists get blocked by missing mocks.
+
+**Solution**: Gate3 now requires test infrastructure BEFORE writing tests:
+
+1. **Identify all dependencies** that need mocking (auth, APIs, databases, shared packages)
+2. **Create mock files** in `tests/mocks/`
+3. **Verify infrastructure** by running test framework with no tests
+4. **Only then** write actual tests
+
+```bash
+# Verify infrastructure works before writing tests
+npx vitest run --passWithNoTests  # Should exit 0, not error
+```
+
+### Integration Boundary Testing (Gate3)
+
+**Problem**: Components work in isolation but fail when integrated.
+
+**Solution**: Test boundaries between major components explicitly:
+
+| Boundary | What to Test |
+|----------|-------------|
+| Auth → API | Token attached, auth errors handled |
+| Frontend → Backend | Paths match, types align |
+| Config → Runtime | Values available in all contexts |
+
+### Environment Matrix Testing (Gate3)
+
+**Problem**: Code works on server but fails on client (or vice versa).
+
+**Solution**: Test in all target environments:
+
+```typescript
+// Client environment test
+/** @vitest-environment jsdom */
+describe('Client', () => { ... });
+
+// Server environment test
+/** @vitest-environment node */
+describe('Server', () => { ... });
+```
+
+### Contract Testing (Gate2)
+
+**Problem**: Frontend expects `/api/reports`, backend serves `/reports`.
+
+**Solution**: Define contracts in Gate2 BEFORE implementation:
+
+1. Document exact API paths
+2. Document request/response types
+3. Document auth header format
+4. Verify contracts match in tests
+
+### Continuous Validation (Gate4)
+
+**Problem**: Type errors and build failures accumulate during implementation.
+
+**Solution**: Mandatory validation checkpoints every 3-5 tasks:
+
+```bash
+npm run typecheck && npm run lint && npm run build
+```
+
+**No deferral allowed** for type errors or build failures.
+
+### Common Testing Issues & Solutions
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| Missing mocks | "Module not found" errors | Create mocks in Gate3 Phase 1 |
+| Auth not sent | 401 errors after login | Test auth → API boundary |
+| Type mismatch | Build fails at end | Run validation checkpoints |
+| Path mismatch | 404 errors | Define contracts in Gate2 |
+| Env context | Works on server, fails on client | Test environment matrix |
+
+---
+
 ## License
 
 This system is provided as-is for development automation purposes.
@@ -736,4 +828,22 @@ To extend this system:
 
 ---
 
-*Generated for Speckit + Superpowers Development System v1.0*
+*Generated for Speckit + Superpowers Development System v1.1*
+
+---
+
+## Changelog
+
+### v1.1 (2026-01-04)
+- **Gate2**: Added contract testing requirements (API paths, auth contracts, error formats)
+- **Gate3**: Added test infrastructure prerequisites (mock inventory, verification step)
+- **Gate3**: Added integration boundary testing (auth→API, frontend→backend)
+- **Gate3**: Added environment matrix testing (server/client/edge)
+- **Gate4**: Added continuous validation checkpoints (type, lint, build after every batch)
+- **Gate4**: Removed "deferral" escape hatch for type/build errors
+- **Docs**: Added Testing Best Practices section with common issues & solutions
+
+### v1.0 (2025-12-28)
+- Initial release with 8-gate pipeline
+- Superpowers integration
+- Session management
