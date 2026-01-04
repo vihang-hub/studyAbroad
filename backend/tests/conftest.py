@@ -264,3 +264,52 @@ def set_cron_secret():
     os.environ['CRON_SECRET'] = 'test_cron_secret'
     yield 'test_cron_secret'
     os.environ.pop('CRON_SECRET', None)
+
+
+@pytest.fixture
+def authenticated_client(mock_user_id) -> Generator:
+    """
+    Create a FastAPI test client with mocked authentication.
+
+    This overrides the get_current_user_id dependency to return a mock user ID
+    without requiring actual JWT verification.
+    """
+    # Use same import path as the routes to ensure it's the same function object
+    from api.services.auth_service import get_current_user_id
+
+    async def override_get_current_user_id():
+        return mock_user_id
+
+    app.dependency_overrides[get_current_user_id] = override_get_current_user_id
+
+    with TestClient(app) as c:
+        yield c
+
+    # Clean up the override
+    app.dependency_overrides.pop(get_current_user_id, None)
+
+
+@pytest.fixture
+def payment_enabled_client() -> Generator:
+    """
+    Create a test client with payments feature flag enabled.
+
+    This overrides the get_feature_flags dependency to return a mock
+    FeatureFlagEvaluator that always returns True for is_enabled().
+    """
+    from dependencies import get_feature_flags
+    from feature_flags.evaluator import FeatureFlagEvaluator
+
+    mock_feature_flags = MagicMock(spec=FeatureFlagEvaluator)
+    mock_feature_flags.is_enabled.return_value = True
+
+    def override_get_feature_flags():
+        return mock_feature_flags
+
+    app.dependency_overrides[get_feature_flags] = override_get_feature_flags
+
+    with TestClient(app) as c:
+        yield c
+
+    # Clean up the override
+    app.dependency_overrides.pop(get_feature_flags, None)

@@ -82,6 +82,8 @@ class StripeConfig(BaseModel):
         None, description="Stripe webhook secret for signature verification"
     )
     STRIPE_PRICE_ID: str | None = Field(None, description="Stripe price ID for £2.99 report")
+    STRIPE_PRICE_AMOUNT: int = Field(299, description="Payment amount in pence (299 = £2.99)")
+    STRIPE_CURRENCY: str = Field("gbp", description="Stripe currency code (lowercase)")
     PAYMENT_AMOUNT: float = Field(2.99, ge=2.99, le=2.99, description="Payment amount in GBP")
     PAYMENT_CURRENCY: Literal["GBP"] = Field("GBP", description="Payment currency")
 
@@ -140,8 +142,8 @@ class EnvironmentConfig(BaseSettings):
     DATABASE_IDLE_TIMEOUT_MS: int = Field(30000, ge=1000)
     DATABASE_CONNECTION_TIMEOUT_MS: int = Field(2000, ge=500)
 
-    # Logging
-    LOG_LEVEL: LogLevel = Field("DEBUG", description="Logging level")
+    # Logging (LOG_LEVEL default is None, set by validator based on ENVIRONMENT_MODE)
+    LOG_LEVEL: LogLevel = Field(None, description="Logging level")
     LOG_DIR: str = Field("./logs")
     LOG_MAX_SIZE_MB: int = Field(100, ge=1, le=1000)
     LOG_ROTATION_DAYS: int = Field(1, ge=1, le=365)
@@ -165,6 +167,8 @@ class EnvironmentConfig(BaseSettings):
     STRIPE_SECRET_KEY: str | None = Field(None)
     STRIPE_WEBHOOK_SECRET: str | None = Field(None)
     STRIPE_PRICE_ID: str | None = Field(None)
+    STRIPE_PRICE_AMOUNT: int = Field(299, description="Payment amount in pence (299 = £2.99)")
+    STRIPE_CURRENCY: str = Field("gbp", description="Stripe currency code (lowercase)")
     PAYMENT_AMOUNT: float = Field(2.99, ge=2.99, le=2.99)
     PAYMENT_CURRENCY: Literal["GBP"] = Field("GBP")
 
@@ -186,6 +190,9 @@ class EnvironmentConfig(BaseSettings):
     RATE_LIMIT_MAX: int = Field(100, ge=1)
     RATE_LIMIT_WINDOW_SEC: int = Field(60, ge=1)
     RATE_LIMIT_REPORTS_PER_DAY: int = Field(10, ge=1)
+
+    # Cron Security
+    CRON_SECRET: str | None = Field(None, description="Secret for cron job authentication")
 
     class Config:
         env_file = ".env"

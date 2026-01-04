@@ -1,7 +1,10 @@
 """
 Integration tests for API endpoints
 """
+import pytest
 from unittest.mock import patch
+from fastapi.testclient import TestClient
+from src.main import app
 from src.api.models.report import ReportStatus
 
 
@@ -38,13 +41,10 @@ class TestReportsEndpoints:
         )
         assert response.status_code == 401  # Missing authorization
 
-    def test_initiate_report_success(self, client, sample_uk_query):
+    def test_initiate_report_success(self, authenticated_client, sample_uk_query):
         """Test POST /reports/initiate with valid auth"""
-        with patch("src.api.services.report_service.create_report") as mock_create, \
-             patch("src.api.services.payment_service.create_checkout_session") as mock_checkout, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
+        with patch("src.api.routes.reports.create_report") as mock_create, \
+             patch("src.api.routes.reports.create_checkout_session") as mock_checkout:
 
             from src.api.models.report import CreateReportResponse
             from src.api.models.payment import CreateCheckoutResponse
@@ -62,10 +62,9 @@ class TestReportsEndpoints:
                 currency="gbp",
             )
 
-            response = client.post(
+            response = authenticated_client.post(
                 "/reports/initiate",
                 json={"query": sample_uk_query},
-                headers={"Authorization": "Bearer test_token"},
             )
 
             assert response.status_code == 200
@@ -74,18 +73,14 @@ class TestReportsEndpoints:
             assert "client_secret" in data
             assert "payment_intent_id" in data
 
-    def test_initiate_report_invalid_query(self, client, sample_non_uk_query):
+    def test_initiate_report_invalid_query(self, authenticated_client, sample_non_uk_query):
         """Test POST /reports/initiate rejects non-UK queries"""
-        with patch("src.api.services.report_service.create_report") as mock_create, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
+        with patch("src.api.routes.reports.create_report") as mock_create:
             mock_create.side_effect = ValueError("Query must be UK-related")
 
-            response = client.post(
+            response = authenticated_client.post(
                 "/reports/initiate",
                 json={"query": sample_non_uk_query},
-                headers={"Authorization": "Bearer test_token"},
             )
 
             assert response.status_code == 400
@@ -95,36 +90,25 @@ class TestReportsEndpoints:
         response = client.get(f"/reports/{mock_report_id}")
         assert response.status_code == 401
 
-    def test_get_report_by_id_success(self, client, mock_report_id, sample_report_data):
+    def test_get_report_by_id_success(self, authenticated_client, mock_report_id, sample_report_data):
         """Test GET /reports/{id} with valid auth"""
-        with patch("src.api.services.report_service.get_report") as mock_get, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
-
+        with patch("src.api.routes.reports.get_report") as mock_get:
             from src.api.models.report import Report
 
             mock_get.return_value = Report(**sample_report_data)
 
-            response = client.get(
-                f"/reports/{mock_report_id}", headers={"Authorization": "Bearer test_token"}
-            )
+            response = authenticated_client.get(f"/reports/{mock_report_id}")
 
             assert response.status_code == 200
             data = response.json()
             assert data["id"] == mock_report_id
 
-    def test_get_report_by_id_not_found(self, client, mock_report_id):
+    def test_get_report_by_id_not_found(self, authenticated_client, mock_report_id):
         """Test GET /reports/{id} returns 404 when not found"""
-        with patch("src.api.services.report_service.get_report") as mock_get, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
+        with patch("src.api.routes.reports.get_report") as mock_get:
             mock_get.return_value = None
 
-            response = client.get(
-                f"/reports/{mock_report_id}", headers={"Authorization": "Bearer test_token"}
-            )
+            response = authenticated_client.get(f"/reports/{mock_report_id}")
 
             assert response.status_code == 404
 
@@ -133,13 +117,9 @@ class TestReportsEndpoints:
         response = client.get("/reports")
         assert response.status_code == 401
 
-    def test_list_reports_success(self, client):
+    def test_list_reports_success(self, authenticated_client):
         """Test GET /reports returns user's reports"""
-        with patch("src.api.services.report_service.list_user_reports") as mock_list, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
-
+        with patch("src.api.routes.reports.list_user_reports") as mock_list:
             from src.api.models.report import ReportListItem
             from datetime import datetime
 
@@ -160,7 +140,7 @@ class TestReportsEndpoints:
                 ),
             ]
 
-            response = client.get("/reports", headers={"Authorization": "Bearer test_token"})
+            response = authenticated_client.get("/reports")
 
             assert response.status_code == 200
             data = response.json()
@@ -171,33 +151,23 @@ class TestReportsEndpoints:
         response = client.delete(f"/reports/{mock_report_id}")
         assert response.status_code == 401
 
-    def test_delete_report_success(self, client, mock_report_id):
+    def test_delete_report_success(self, authenticated_client, mock_report_id):
         """Test DELETE /reports/{id} with valid auth"""
-        with patch("src.api.services.report_service.soft_delete_report") as mock_delete, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
+        with patch("src.api.routes.reports.soft_delete_report") as mock_delete:
             mock_delete.return_value = True
 
-            response = client.delete(
-                f"/reports/{mock_report_id}", headers={"Authorization": "Bearer test_token"}
-            )
+            response = authenticated_client.delete(f"/reports/{mock_report_id}")
 
             assert response.status_code == 200
             data = response.json()
             assert "deleted successfully" in data["message"].lower()
 
-    def test_delete_report_not_found(self, client, mock_report_id):
+    def test_delete_report_not_found(self, authenticated_client, mock_report_id):
         """Test DELETE /reports/{id} returns 404 when not found"""
-        with patch("src.api.services.report_service.soft_delete_report") as mock_delete, \
-             patch("src.api.services.auth_service.verify_clerk_token") as mock_verify:
-
-            mock_verify.return_value = "user_12345"
+        with patch("src.api.routes.reports.soft_delete_report") as mock_delete:
             mock_delete.return_value = False
 
-            response = client.delete(
-                f"/reports/{mock_report_id}", headers={"Authorization": "Bearer test_token"}
-            )
+            response = authenticated_client.delete(f"/reports/{mock_report_id}")
 
             assert response.status_code == 404
 
@@ -205,18 +175,18 @@ class TestReportsEndpoints:
 class TestWebhookEndpoints:
     """Test suite for /webhooks endpoints"""
 
-    def test_stripe_webhook_missing_signature(self, client):
+    def test_stripe_webhook_missing_signature(self, payment_enabled_client):
         """Test POST /webhooks/stripe requires signature header"""
-        response = client.post("/webhooks/stripe", content=b"test payload")
+        response = payment_enabled_client.post("/webhooks/stripe", content=b"test payload")
 
         assert response.status_code == 400
 
-    def test_stripe_webhook_invalid_signature(self, client):
+    def test_stripe_webhook_invalid_signature(self, payment_enabled_client):
         """Test POST /webhooks/stripe validates signature"""
-        with patch("src.api.services.payment_service.verify_webhook_signature") as mock_verify:
+        with patch("src.api.routes.webhooks.verify_webhook_signature") as mock_verify:
             mock_verify.side_effect = Exception("Invalid signature")
 
-            response = client.post(
+            response = payment_enabled_client.post(
                 "/webhooks/stripe",
                 content=b"test payload",
                 headers={"stripe-signature": "invalid_sig"},
@@ -224,13 +194,13 @@ class TestWebhookEndpoints:
 
             assert response.status_code == 400
 
-    def test_stripe_webhook_payment_succeeded(self, client, sample_payment_data):
+    def test_stripe_webhook_payment_succeeded(self, payment_enabled_client, sample_payment_data):
         """Test POST /webhooks/stripe handles payment_intent.succeeded"""
-        with patch("src.api.services.payment_service.verify_webhook_signature") as mock_verify, \
-             patch("src.api.services.payment_service.update_payment_status") as mock_update, \
-             patch("src.api.services.report_service.trigger_report_generation") as mock_trigger:
+        with patch("src.api.routes.webhooks.verify_webhook_signature") as mock_verify, \
+             patch("src.api.routes.webhooks.update_payment_status") as mock_update, \
+             patch("src.api.routes.webhooks.trigger_report_generation") as mock_trigger:
 
-            from src.api.models.payment import Payment
+            from api.models.payment import Payment
 
             mock_verify.return_value = {
                 "type": "payment_intent.succeeded",
@@ -240,7 +210,7 @@ class TestWebhookEndpoints:
 
             mock_update.return_value = Payment(**sample_payment_data)
 
-            response = client.post(
+            response = payment_enabled_client.post(
                 "/webhooks/stripe",
                 content=b"test payload",
                 headers={"stripe-signature": "valid_sig"},
@@ -249,10 +219,10 @@ class TestWebhookEndpoints:
             assert response.status_code == 200
             mock_trigger.assert_called_once()
 
-    def test_stripe_webhook_payment_failed(self, client):
+    def test_stripe_webhook_payment_failed(self, payment_enabled_client):
         """Test POST /webhooks/stripe handles payment_intent.payment_failed"""
-        with patch("src.api.services.payment_service.verify_webhook_signature") as mock_verify, \
-             patch("src.api.services.payment_service.update_payment_status") as mock_update:
+        with patch("src.api.routes.webhooks.verify_webhook_signature") as mock_verify, \
+             patch("src.api.routes.webhooks.update_payment_status") as mock_update:
 
             mock_verify.return_value = {
                 "type": "payment_intent.payment_failed",
@@ -265,7 +235,7 @@ class TestWebhookEndpoints:
                 },
             }
 
-            response = client.post(
+            response = payment_enabled_client.post(
                 "/webhooks/stripe",
                 content=b"test payload",
                 headers={"stripe-signature": "valid_sig"},
@@ -274,10 +244,10 @@ class TestWebhookEndpoints:
             assert response.status_code == 200
             mock_update.assert_called_once()
 
-    def test_stripe_webhook_charge_refunded(self, client):
+    def test_stripe_webhook_charge_refunded(self, payment_enabled_client):
         """Test POST /webhooks/stripe handles charge.refunded"""
-        with patch("src.api.services.payment_service.verify_webhook_signature") as mock_verify, \
-             patch("src.api.services.payment_service.update_payment_status") as mock_update:
+        with patch("src.api.routes.webhooks.verify_webhook_signature") as mock_verify, \
+             patch("src.api.routes.webhooks.update_payment_status") as mock_update:
 
             mock_verify.return_value = {
                 "type": "charge.refunded",
@@ -285,7 +255,7 @@ class TestWebhookEndpoints:
                 "data": {"object": {"payment_intent": "pi_12345"}},
             }
 
-            response = client.post(
+            response = payment_enabled_client.post(
                 "/webhooks/stripe",
                 content=b"test payload",
                 headers={"stripe-signature": "valid_sig"},
@@ -294,16 +264,16 @@ class TestWebhookEndpoints:
             assert response.status_code == 200
             mock_update.assert_called_once()
 
-    def test_stripe_webhook_unknown_event(self, client):
+    def test_stripe_webhook_unknown_event(self, payment_enabled_client):
         """Test POST /webhooks/stripe ignores unknown events"""
-        with patch("src.api.services.payment_service.verify_webhook_signature") as mock_verify:
+        with patch("src.api.routes.webhooks.verify_webhook_signature") as mock_verify:
             mock_verify.return_value = {
                 "type": "unknown.event",
                 "id": "evt_12345",
                 "data": {"object": {}},
             }
 
-            response = client.post(
+            response = payment_enabled_client.post(
                 "/webhooks/stripe",
                 content=b"test payload",
                 headers={"stripe-signature": "valid_sig"},

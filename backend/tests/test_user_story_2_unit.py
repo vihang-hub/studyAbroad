@@ -16,6 +16,37 @@ from datetime import datetime, timedelta
 import uuid
 
 
+def create_valid_report_content(query: str = "Computer Science in UK") -> dict:
+    """Create valid report content with all 10 required sections"""
+    return {
+        "query": query,
+        "summary": "Test summary for " + query,
+        "sections": [
+            {"heading": "Executive Summary", "content": "Executive summary content"},
+            {"heading": "Study Options in the UK", "content": "Study options content"},
+            {"heading": "Estimated Cost of Studying", "content": "Cost estimation content"},
+            {"heading": "Visa & Immigration Overview", "content": "Visa overview content"},
+            {"heading": "Post-Study Work Options", "content": "Post-study work content"},
+            {"heading": "Job Prospects in the Chosen Subject", "content": "Job prospects content"},
+            {"heading": "Fallback Job Prospects (Out-of-Field)", "content": "Fallback jobs content"},
+            {"heading": "Risks & Reality Check", "content": "Risks and reality content"},
+            {"heading": "30/60/90-Day Action Plan", "content": "Action plan content"},
+            {"heading": "Sources & Citations", "content": "Sources and citations content"},
+        ],
+        "total_citations": 3,
+        "generated_at": datetime.utcnow().isoformat(),
+    }
+
+
+def create_valid_citations() -> list:
+    """Create valid citations array"""
+    return [
+        {"url": "https://gov.uk/study-uk", "title": "Study in the UK", "accessed_at": datetime.utcnow().isoformat()},
+        {"url": "https://ucas.com", "title": "UCAS Guide", "accessed_at": datetime.utcnow().isoformat()},
+        {"url": "https://universities.ac.uk", "title": "UK Universities", "accessed_at": datetime.utcnow().isoformat()},
+    ]
+
+
 class TestListUserReports:
     """T130: Test list_user_reports service function"""
 
@@ -116,14 +147,8 @@ class TestGetReport:
             "user_id": user_id,
             "query": "Computer Science in UK",
             "status": "completed",
-            "content": {
-                "query": "Computer Science in UK",
-                "summary": "Test summary",
-                "sections": [],  # Empty list is fine for this test
-                "total_citations": 1,
-                "generated_at": datetime.utcnow().isoformat(),
-            },
-            "citations": [{"url": "https://example.com", "title": "Source"}],
+            "content": create_valid_report_content("Computer Science in UK"),
+            "citations": create_valid_citations(),
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
             "expires_at": (datetime.utcnow() + timedelta(days=30)).isoformat(),
@@ -147,7 +172,7 @@ class TestGetReport:
 
             assert report is not None
             assert report.id == report_id
-            assert report.content["sections"]["overview"]["content"] == "Existing content"
+            assert len(report.content.sections) == 10
 
     @pytest.mark.asyncio
     async def test_returns_none_for_different_user(self):
@@ -266,14 +291,8 @@ class TestImmutability:
             "user_id": user_id,
             "query": "Test Query",
             "status": "completed",
-            "content": {
-                "query": "Test Query",
-                "summary": "Test summary",
-                "sections": [],
-                "total_citations": 0,
-                "generated_at": datetime.utcnow().isoformat(),
-            },
-            "citations": [],
+            "content": create_valid_report_content("Test Query"),
+            "citations": create_valid_citations(),
             "created_at": datetime.utcnow().isoformat(),
             "updated_at": datetime.utcnow().isoformat(),
             "expires_at": datetime.utcnow().isoformat(),

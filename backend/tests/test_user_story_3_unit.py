@@ -25,22 +25,28 @@ class TestExpireOldReports:
         from src.database.repositories.report import ReportRepository
         from src.api.models.report import ReportStatus
 
-        # Mock database adapter
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
-
-        # Mock expired reports
+        # Mock expired report
         mock_expired_report = Mock()
         mock_expired_report.id = str(uuid.uuid4())
         mock_expired_report.status = ReportStatus.COMPLETED
         mock_expired_report.expires_at = datetime.utcnow() - timedelta(days=1)
 
+        # Mock result from execute
         mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = [mock_expired_report]
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(return_value=mock_result)
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        # Mock session with proper async context manager pattern
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.commit = AsyncMock()
+
+        # Mock adapter.get_session() as async context manager
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 
@@ -55,18 +61,22 @@ class TestExpireOldReports:
         from src.database.repositories.report import ReportRepository
         from src.api.models.report import ReportStatus
 
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
-
         # Mock 5 expired reports
         expired_reports = [Mock(status=ReportStatus.COMPLETED, expires_at=datetime.utcnow() - timedelta(days=i)) for i in range(1, 6)]
 
         mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = expired_reports
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(return_value=mock_result)
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.commit = AsyncMock()
+
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 
@@ -80,12 +90,6 @@ class TestExpireOldReports:
         from src.database.repositories.report import ReportRepository
         from src.api.models.report import ReportStatus
 
-        # This test verifies the query logic would filter correctly
-        # In real implementation, the query WHERE clause handles this
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
-
         # Only completed reports in this case
         mock_report = Mock()
         mock_report.status = ReportStatus.COMPLETED
@@ -94,8 +98,16 @@ class TestExpireOldReports:
         mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = [mock_report]
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(return_value=mock_result)
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.commit = AsyncMock()
+
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 
@@ -114,10 +126,6 @@ class TestDeleteExpiredReports:
         from src.database.repositories.report import ReportRepository
         from src.api.models.report import ReportStatus
 
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
-
         # Mock old expired report
         old_expires_at = datetime.utcnow() - timedelta(days=91)
         mock_old_report = Mock()
@@ -128,26 +136,30 @@ class TestDeleteExpiredReports:
         mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = [mock_old_report]
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(return_value=mock_result)
-        mock_session.__aenter__.return_value.delete = AsyncMock()
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.delete = AsyncMock()
+        mock_session.commit = AsyncMock()
+
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 
         deleted_count = await repo.delete_expired_reports()
 
         assert deleted_count == 1
-        mock_session.__aenter__.return_value.delete.assert_called_once_with(mock_old_report)
+        mock_session.delete.assert_called_once_with(mock_old_report)
 
     @pytest.mark.asyncio
     async def test_returns_accurate_count(self):
         """Test delete_expired_reports returns accurate count"""
         from src.database.repositories.report import ReportRepository
         from src.api.models.report import ReportStatus
-
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
 
         # Mock 3 old expired reports
         old_reports = [
@@ -158,9 +170,17 @@ class TestDeleteExpiredReports:
         mock_result = Mock()
         mock_result.scalars.return_value.all.return_value = old_reports
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(return_value=mock_result)
-        mock_session.__aenter__.return_value.delete = AsyncMock()
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_result)
+        mock_session.delete = AsyncMock()
+        mock_session.commit = AsyncMock()
+
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 
@@ -293,27 +313,27 @@ class TestGDPRCompliance:
         """Test hard deleted reports are unrecoverable"""
         from src.database.repositories.report import ReportRepository
 
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
-
         report_id = str(uuid.uuid4())
 
         # Mock finding report
         mock_report = Mock()
         mock_report.id = report_id
 
-        # First call: find_by_id returns report
-        # Second call after delete: find_by_id returns None
-        mock_find_result1 = Mock()
-        mock_find_result1.scalars.return_value.first.return_value = mock_report
+        # Mock result using scalar_one_or_none() pattern (used by find_by_id)
+        mock_find_result = Mock()
+        mock_find_result.scalar_one_or_none.return_value = mock_report
 
-        mock_find_result2 = Mock()
-        mock_find_result2.scalars.return_value.first.return_value = None
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_find_result)
+        mock_session.delete = AsyncMock()
+        mock_session.commit = AsyncMock()
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(side_effect=[mock_find_result1, mock_find_result2])
-        mock_session.__aenter__.return_value.delete = AsyncMock()
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 
@@ -321,7 +341,7 @@ class TestGDPRCompliance:
         deleted = await repo.hard_delete(report_id)
 
         assert deleted is True
-        mock_session.__aenter__.return_value.delete.assert_called_once_with(mock_report)
+        mock_session.delete.assert_called_once_with(mock_report)
 
 
 class TestDataRetentionLifecycle:
@@ -338,10 +358,6 @@ class TestDataRetentionLifecycle:
         from src.database.repositories.report import ReportRepository
         from src.api.models.report import ReportStatus
 
-        mock_adapter = MagicMock()
-        mock_session = AsyncMock()
-        mock_adapter.get_session = AsyncMock(return_value=mock_session.__aenter__.return_value)
-
         # Step 1: Report created 31 days ago
         created_at = datetime.utcnow() - timedelta(days=31)
         expires_at = created_at + timedelta(days=30)  # 1 day in past now
@@ -356,8 +372,16 @@ class TestDataRetentionLifecycle:
         mock_result_expire = Mock()
         mock_result_expire.scalars.return_value.all.return_value = [mock_report]
 
-        mock_session.__aenter__.return_value.execute = AsyncMock(return_value=mock_result_expire)
-        mock_session.__aenter__.return_value.commit = AsyncMock()
+        mock_session = AsyncMock()
+        mock_session.execute = AsyncMock(return_value=mock_result_expire)
+        mock_session.commit = AsyncMock()
+
+        mock_context_manager = AsyncMock()
+        mock_context_manager.__aenter__.return_value = mock_session
+        mock_context_manager.__aexit__.return_value = None
+
+        mock_adapter = MagicMock()
+        mock_adapter.get_session = AsyncMock(return_value=mock_context_manager)
 
         repo = ReportRepository(mock_adapter)
 

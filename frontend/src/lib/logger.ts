@@ -132,7 +132,6 @@ export function logApiResponse(
   duration: number,
   metadata?: LogMetadata,
 ): void {
-  const level = status >= 400 ? 'error' : 'info';
   const logger = getLogger();
 
   const logData = {
@@ -145,8 +144,15 @@ export function logApiResponse(
     type: 'api_response',
   };
 
-  if (level === 'error') {
+  // 401/403 are expected for unauthenticated users - log as warning, not error
+  // 5xx are server errors - log as error
+  // 4xx (except 401/403) are client errors - log as warning
+  if (status >= 500) {
     logger.error(`API Response: ${method} ${url} ${status}`, undefined, logData);
+  } else if (status === 401 || status === 403) {
+    logger.warn(`API Response: ${method} ${url} ${status} (auth required)`, logData);
+  } else if (status >= 400) {
+    logger.warn(`API Response: ${method} ${url} ${status}`, logData);
   } else {
     logger.info(`API Response: ${method} ${url} ${status}`, logData);
   }

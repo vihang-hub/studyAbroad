@@ -4,9 +4,36 @@ Tests for Environment Configuration
 Tests Pydantic validation rules and environment-specific requirements.
 """
 
+import os
 import pytest
 from pydantic import ValidationError
 from config.environment import EnvironmentConfig
+
+
+@pytest.fixture
+def clean_env(monkeypatch):
+    """Clear environment variables that might interfere with tests
+
+    Note: Since Pydantic BaseSettings reads from .env file, we also need
+    to prevent file-based loading by removing the env_file path temporarily.
+    """
+    # Clear environment variables
+    env_vars_to_clear = [
+        'SUPABASE_URL', 'SUPABASE_ANON_KEY', 'SUPABASE_SERVICE_ROLE_KEY',
+        'LOG_LEVEL', 'ENVIRONMENT_MODE', 'STRIPE_PUBLISHABLE_KEY',
+        'STRIPE_SECRET_KEY', 'STRIPE_WEBHOOK_SECRET', 'STRIPE_PRICE_ID',
+    ]
+    for var in env_vars_to_clear:
+        monkeypatch.delenv(var, raising=False)
+
+    # Patch the model_config to disable BOTH env and dotenv loading
+    @classmethod
+    def no_external_settings(cls, settings_cls, init_settings, env_settings, dotenv_settings, file_secret_settings):
+        # Only use init_settings (values passed directly to constructor)
+        return (init_settings,)
+
+    monkeypatch.setattr(EnvironmentConfig, 'settings_customise_sources', no_external_settings)
+    yield
 
 
 class TestEnvironmentConfig:
@@ -106,7 +133,7 @@ class TestEnvironmentConfig:
         assert config.ENABLE_SUPABASE is True
         assert config.ENABLE_PAYMENTS is False
 
-    def test_supabase_requires_credentials(self):
+    def test_supabase_requires_credentials(self, clean_env):
         """Enabling Supabase requires URL and anon key"""
         config_data = {
             'ENVIRONMENT_MODE': 'test',
@@ -160,7 +187,7 @@ class TestEnvironmentConfig:
         config = EnvironmentConfig(**config_data)
         assert config.LOG_LEVEL == 'DEBUG'
 
-    def test_log_level_defaults_to_error_for_production(self):
+    def test_log_level_defaults_to_error_for_production(self, clean_env):
         """Production mode defaults LOG_LEVEL to ERROR if not set"""
         config_data = {
             'ENVIRONMENT_MODE': 'production',

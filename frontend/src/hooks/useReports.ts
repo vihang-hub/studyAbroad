@@ -38,8 +38,16 @@ export function useReports(options: UseReportsOptions = {}): UseReportsResult {
       setIsLoading(true);
       setError(null);
 
-      const endpoint = `/api/reports?limit=${limit}`;
+      const endpoint = `/reports/?limit=${limit}`;
       const response = await api.get<Report[]>(endpoint);
+
+      // Handle 401/403 gracefully - user not authenticated, return empty list
+      if (response.status === 401 || response.status === 403) {
+        setReports([]);
+        setHasMore(false);
+        // Don't set error - this is expected for unauthenticated users
+        return;
+      }
 
       if (response.error || !response.data) {
         setError(response.error?.message || 'Failed to load reports');

@@ -27,7 +27,7 @@ export default function PaymentSuccessPage() {
     // Poll for report status every 2 seconds
     const pollInterval = setInterval(async () => {
       try {
-        const response = await api.get<Report>(`/api/reports/${reportId}`);
+        const response = await api.get<Report>(`/reports/${reportId}`);
 
         if (response.error || !response.data) {
           setError(response.error?.message || 'Failed to fetch report');

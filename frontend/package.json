@@ -9,7 +9,12 @@
     "lint": "next lint",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
-    "test:mutation": "stryker run"
+    "test:mutation": "stryker run",
+    "test:contracts": "vitest --config vitest.integration.config.ts tests/contracts/",
+    "test:integration": "vitest --config vitest.integration.config.ts tests/integration/",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test && npm run test:contracts && npm run test:integration && npm run test:e2e"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
@@ -32,6 +37,7 @@
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@stryker-mutator/core": "^8.0.0",
     "@stryker-mutator/typescript-checker": "^8.0.0",
     "@testing-library/dom": "^10.4.1",

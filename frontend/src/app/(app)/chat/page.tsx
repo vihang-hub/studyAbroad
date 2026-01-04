@@ -17,7 +17,7 @@ export default function ChatPage() {
   const [, setCurrentQuery] = useState('');
 
   const { isLoading, error, createCheckout } = usePayment({
-    apiEndpoint: '/api/reports/initiate',
+    apiEndpoint: '/reports/initiate',
     onSuccess: (reportId) => {
       router.push(`/chat/success?reportId=${reportId}`);
     },

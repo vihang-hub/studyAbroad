@@ -86,7 +86,7 @@ describe('User Story 2: View Report History - Integration Tests', () => {
       });
 
       // Verify API was called with limit=10
-      expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+      expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10');
     });
 
     it('displays reports sorted by most recent first', async () => {
@@ -197,7 +197,7 @@ describe('User Story 2: View Report History - Integration Tests', () => {
       render(<ReportSidebar />);
 
       await waitFor(() => {
-        expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+        expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10');
       });
 
       // All displayed reports should belong to same user
@@ -267,7 +267,7 @@ describe('User Story 2: View Report History - Integration Tests', () => {
 
       // Only one API call to fetch reports list
       // No AI regeneration calls
-      expect(mockGet).toHaveBeenCalledWith('/api/reports?limit=10');
+      expect(mockGet).toHaveBeenCalledWith('/reports/?limit=10');
     });
   });
 

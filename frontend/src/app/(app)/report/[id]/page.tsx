@@ -25,7 +25,7 @@ export default function ReportDetailPage() {
     const fetchReport = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get<Report>(`/api/reports/${reportId}`);
+        const response = await api.get<Report>(`/reports/${reportId}`);
 
         if (response.error || !response.data) {
           setError(response.error?.message || 'Failed to load report');
