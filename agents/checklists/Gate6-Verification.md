@@ -62,6 +62,99 @@
 
 ---
 
+## Cross-Layer Integration Verification (NEW - Added 2026-01-04)
+
+**Purpose**: Prevent integration bugs found during manual testing. These checks would have caught all 7 debugging issues from the 2026-01-04 session.
+
+### UI ↔ API Contract Verification
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| All API calls have matching endpoints | ⏸️ | _Run `npm run validate:api-contracts`_ |
+| All response fields match frontend types | ⏸️ | _Field name comparison report_ |
+| Field naming convention consistent (snake_case) | ⏸️ | _Search for camelCase in responses_ |
+| API contract tests exist | ⏸️ | _Test file locations_ |
+
+**Checklist**:
+- [ ] Backend uses snake_case for all response fields
+- [ ] Frontend types use snake_case to match backend
+- [ ] No `reportId` vs `report_id` mismatches
+- [ ] No `createdAt` vs `created_at` mismatches
+
+### Backend ↔ External Service Verification
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Type conversions at library boundaries | ⏸️ | _Conversion locations documented_ |
+| Feature flag checks in all services | ⏸️ | _Pattern compliance report_ |
+| Mock data completeness | ⏸️ | _Mock integrity test results_ |
+
+**Checklist**:
+- [ ] All `HttpUrl` types converted to `str` before passing to libraries
+- [ ] All service functions check `_is_*_enabled()` before external calls
+- [ ] All mock return values have complete data (not None)
+- [ ] Dev mode end-to-end test passes
+
+### Frontend ↔ Browser Compatibility
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Chrome compatibility tested | ⏸️ | _Browser test results_ |
+| No third-party cookie dependencies | ⏸️ | _Cookie audit report_ |
+| Auth flow works in strict mode | ⏸️ | _Login test results_ |
+
+**Checklist**:
+- [ ] No `mode="modal"` for Clerk SignInButton (requires 3rd-party cookies)
+- [ ] Path-based navigation used for auth flows
+- [ ] Tested in Chrome incognito mode (strictest settings)
+
+### Architecture Pattern Compliance
+
+| Pattern | Status | Evidence |
+|---------|--------|----------|
+| Feature Flag Pattern | ⏸️ | _Service function audit_ |
+| Auth Pattern | ⏸️ | _Endpoint auth check audit_ |
+| Error Handling Pattern | ⏸️ | _Error handling audit_ |
+
+**Checklist**:
+- [ ] All protected endpoints use `Depends(get_current_user)`
+- [ ] All frontend API calls use `useAuthenticatedApi()` hook
+- [ ] All service functions check feature flags
+- [ ] All error responses follow consistent format
+
+### Configuration Completeness
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| All config fields defined | ⏸️ | _Config schema validation_ |
+| No hardcoded values | ⏸️ | _Magic value scan_ |
+| Config tests exist | ⏸️ | _Test file locations_ |
+
+**Checklist**:
+- [ ] Every `settings.FIELD_NAME` reference has corresponding config field
+- [ ] `test_environment.py` validates all required fields
+- [ ] No magic numbers/strings that should be config
+
+### Regression Test Coverage
+
+| Issue | Test Exists | Passing | Location |
+|-------|-------------|---------|----------|
+| #1 Chrome modal | ⏸️ | ⏸️ | _frontend test needed_ |
+| #2 HttpUrl type | ✅ | ✅ | `backend/tests/test_debugging_regressions.py:TestIssue2HttpUrlTypeConversion` |
+| #3 Feature flags | ✅ | ✅ | `backend/tests/test_debugging_regressions.py:TestIssue3FeatureFlagsInServices` |
+| #4 Config field | ✅ | ✅ | `backend/tests/test_debugging_regressions.py:TestIssue4ConfigFieldsExist` |
+| #5 snake_case | ✅ | ✅ | `backend/tests/test_debugging_regressions.py:TestIssue5SnakeCaseFieldNaming` |
+| #6 Auth pattern | ⏸️ | ⏸️ | _frontend test needed_ |
+| #7 Mock content | ✅ | ✅ | `backend/tests/test_debugging_regressions.py:TestIssue7MockReportContentCompleteness` |
+
+**Checklist**:
+- [x] Regression test suite exists: `backend/tests/test_debugging_regressions.py`
+- [x] 5/7 backend regression tests passing (20 tests total)
+- [ ] Regression tests run in CI pipeline
+- [ ] Frontend regression tests for Issues #1, #6
+
+---
+
 ## Final Verdict
 
 **Gate6: ✅ PASS**

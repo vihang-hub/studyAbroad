@@ -811,6 +811,103 @@ npm run typecheck && npm run lint && npm run build
 
 ---
 
+## Cross-Layer Integration Testing (NEW)
+
+These checks prevent the most common integration bugs found during manual testing. Added based on retrospective analysis of debugging sessions.
+
+### The 7 Classes of Integration Bugs
+
+| Issue | Category | Symptom | Prevention |
+|-------|----------|---------|------------|
+| #1 | Browser Compatibility | Chrome modal auth fails | Don't use `mode="modal"` for Clerk SignInButton |
+| #2 | Type Conversion | Pydantic HttpUrl breaks Supabase | Convert HttpUrl to `str` at library boundaries |
+| #3 | Feature Flags | DB connection refused in dev | Check `_is_*_enabled()` before external calls |
+| #4 | Config Fields | AttributeError on settings | Define ALL config fields referenced in code |
+| #5 | Field Naming | JSON parsing errors | Use snake_case consistently in API responses |
+| #6 | Auth Pattern | 401 errors on protected pages | Use `useAuthenticatedApi()` hook, not raw fetch |
+| #7 | Mock Data | "Content not available" errors | Mock data must be COMPLETE, never `None` |
+
+### Gate4: Cross-Layer Integration Checks
+
+Add these checks to every Gate4 implementation:
+
+#### Cross-Library Type Safety
+```python
+# ❌ BAD - HttpUrl incompatible with Supabase client
+supabase.storage.from_("bucket").upload(file, settings.API_URL)
+
+# ✅ GOOD - Convert to string first
+supabase.storage.from_("bucket").upload(file, str(settings.API_URL))
+```
+
+#### Feature Flag Pattern
+```python
+# REQUIRED pattern for every service function
+async def get_report(report_id: str, user_id: str) -> Report:
+    if not _is_supabase_enabled():
+        return _create_mock_report()  # Mock MUST be complete
+    return await _get_real_report()
+```
+
+#### API Field Naming
+```python
+# All response models MUST use snake_case
+class ReportResponse(BaseModel):
+    report_id: str      # ✅ snake_case
+    created_at: datetime  # ✅ snake_case
+    # reportId: str     # ❌ WRONG - camelCase
+```
+
+### Gate5: Integration Testing Tasks
+
+| Task | Description | Priority |
+|------|-------------|----------|
+| T180 | Cross-Browser Compatibility Testing | HIGH |
+| T181 | API Contract Validation Testing | CRITICAL |
+| T182 | Architectural Pattern Compliance Testing | HIGH |
+| T183 | Mock/Dev Mode Data Integrity Testing | HIGH |
+| T184 | Cross-Library Type Safety Testing | MEDIUM |
+| T185 | Configuration Completeness Testing | MEDIUM |
+| T186 | Regression Test Suite for Debugging Fixes | HIGH |
+
+### Gate6: Cross-Layer Verification Checklists
+
+Before marking Gate6 PASS, verify:
+
+- [ ] Backend uses snake_case for ALL response fields
+- [ ] Frontend types match backend field names exactly
+- [ ] All `HttpUrl` types converted to `str` before library calls
+- [ ] All service functions check feature flags before external calls
+- [ ] All mock return values have complete data (not `None`)
+- [ ] All protected endpoints use `Depends(get_current_user)`
+- [ ] All frontend API calls use `useAuthenticatedApi()` hook
+- [ ] No `mode="modal"` for Clerk SignInButton (Chrome incompatible)
+- [ ] Every `settings.FIELD_NAME` reference has corresponding config field
+
+### Regression Test Suite
+
+Create `backend/tests/test_debugging_regressions.py` with tests for each issue class:
+
+```python
+class TestIssue2HttpUrlTypeConversion:
+    """Prevent HttpUrl → Supabase incompatibility"""
+    def test_httpurl_can_be_converted_to_string(self): ...
+
+class TestIssue3FeatureFlagsInServices:
+    """Prevent dev mode DB connection errors"""
+    def test_report_service_checks_supabase_flag(self): ...
+
+class TestIssue5SnakeCaseFieldNaming:
+    """Prevent JSON parsing errors from naming mismatch"""
+    def test_report_model_uses_snake_case(self): ...
+
+class TestIssue7MockReportContentCompleteness:
+    """Prevent 'content not available' errors in dev mode"""
+    def test_mock_report_content_is_not_none(self): ...
+```
+
+---
+
 ## License
 
 This system is provided as-is for development automation purposes.
@@ -828,11 +925,19 @@ To extend this system:
 
 ---
 
-*Generated for Speckit + Superpowers Development System v1.1*
+*Generated for Speckit + Superpowers Development System v1.2*
 
 ---
 
 ## Changelog
+
+### v1.2 (2026-01-04)
+- **NEW SECTION**: Cross-Layer Integration Testing - 7 classes of integration bugs with prevention strategies
+- **Gate4**: Added cross-layer integration checks (type safety, feature flags, field naming, mock completeness)
+- **Gate5**: Added Phase 5 integration testing with 7 new tasks (T180-T186)
+- **Gate6**: Added cross-layer verification checklists (9 mandatory checks before PASS)
+- **Regression Tests**: Created `backend/tests/test_debugging_regressions.py` (20 tests covering 5 issue classes)
+- **Docs**: Documented the 7 classes of bugs from debugging retrospective
 
 ### v1.1 (2026-01-04)
 - **Gate2**: Added contract testing requirements (API paths, auth contracts, error formats)

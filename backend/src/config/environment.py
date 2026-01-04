@@ -131,6 +131,12 @@ class EnvironmentConfig(BaseSettings):
     # Environment
     ENVIRONMENT_MODE: EnvironmentMode = Field("dev", description="Environment mode")
 
+    # CORS
+    ALLOWED_ORIGINS: list[str] = Field(
+        default=["http://localhost:3000", "http://localhost:3001", "http://127.0.0.1:3000", "http://127.0.0.1:3001"],
+        description="Allowed CORS origins"
+    )
+
     # Database
     DATABASE_URL: str = Field(..., description="PostgreSQL or Supabase connection URL")
     SUPABASE_URL: HttpUrl | None = Field(None, description="Supabase project URL")
@@ -185,6 +191,9 @@ class EnvironmentConfig(BaseSettings):
     API_URL: str = Field("http://localhost:8000")
     PORT: int = Field(8000, ge=1, le=65535)
     NODE_ENV: Literal["development", "test", "production"] = Field("development")
+
+    # Report Settings
+    REPORT_EXPIRY_DAYS: int = Field(30, ge=1, le=365, description="Days until report expires")
 
     # Rate Limiting
     RATE_LIMIT_MAX: int = Field(100, ge=1)

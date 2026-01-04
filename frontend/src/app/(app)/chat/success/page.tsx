@@ -5,18 +5,49 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { api } from '@/lib/api-client';
+import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import type { Report, ReportStatus } from '@/types/report';
 
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const reportId = searchParams.get('reportId');
+  const { get: authGet } = useAuthenticatedApi();
 
   const [status, setStatus] = useState<ReportStatus>('pending');
   const [error, setError] = useState<string | null>(null);
+
+  const pollReport = useCallback(async () => {
+    if (!reportId) return null;
+
+    try {
+      const response = await authGet<Report>(`/reports/${reportId}`);
+
+      if (response.error || !response.data) {
+        setError(response.error?.message || 'Failed to fetch report');
+        return 'error';
+      }
+
+      const report = response.data;
+      setStatus(report.status);
+
+      if (report.status === 'completed') {
+        router.push(`/report/${reportId}`);
+        return 'completed';
+      } else if (report.status === 'failed') {
+        setError('Report generation failed');
+        return 'failed';
+      }
+
+      return 'pending';
+    } catch (err) {
+      console.error('Polling error:', err);
+      setError('Failed to check report status');
+      return 'error';
+    }
+  }, [reportId, authGet, router]);
 
   useEffect(() => {
     if (!reportId) {
@@ -26,35 +57,17 @@ export default function PaymentSuccessPage() {
 
     // Poll for report status every 2 seconds
     const pollInterval = setInterval(async () => {
-      try {
-        const response = await api.get<Report>(`/reports/${reportId}`);
-
-        if (response.error || !response.data) {
-          setError(response.error?.message || 'Failed to fetch report');
-          clearInterval(pollInterval);
-          return;
-        }
-
-        const report = response.data;
-        setStatus(report.status);
-
-        if (report.status === 'completed') {
-          clearInterval(pollInterval);
-          // Redirect to report view
-          router.push(`/report/${reportId}`);
-        } else if (report.status === 'failed') {
-          clearInterval(pollInterval);
-          setError('Report generation failed');
-        }
-      } catch (err) {
-        console.error('Polling error:', err);
-        setError('Failed to check report status');
+      const result = await pollReport();
+      if (result && result !== 'pending') {
         clearInterval(pollInterval);
       }
     }, 2000);
 
+    // Initial poll
+    pollReport();
+
     return () => clearInterval(pollInterval);
-  }, [reportId, router]);
+  }, [reportId, router, pollReport]);
 
   return (
     <div className="max-w-2xl mx-auto text-center py-12">

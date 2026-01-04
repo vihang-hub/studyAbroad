@@ -142,6 +142,123 @@ Track checkpoint results:
 
 ---
 
+## Cross-Layer Integration Checks
+
+**CRITICAL**: These checks prevent the most common integration bugs found during manual testing.
+
+### Cross-Library Type Safety
+
+- [ ] **Type Checker Exit Code 0** - After implementation:
+  ```bash
+  # Python: Verify no type mismatches between libraries
+  mypy src/ --strict 2>&1 | grep -E "error:|incompatible" && echo "FAIL" || echo "PASS"
+
+  # TypeScript: Verify all types resolve
+  npx tsc --noEmit
+  ```
+- [ ] **Library Boundary Conversions** - Document any type conversions:
+  | Source Type | Target Type | Conversion Location | Test Case |
+  |-------------|-------------|---------------------|-----------|
+  | Pydantic HttpUrl | str | _location_ | _test_name_ |
+  | _type_ | _type_ | _location_ | _test_name_ |
+
+- [ ] **No Implicit Conversions** - All library boundary crossings use explicit conversion functions
+
+### Architectural Pattern Consistency
+
+- [ ] **Feature Flag Pattern** - ALL service functions check flags before external calls:
+  ```python
+  # REQUIRED pattern for every service function that uses external services
+  def get_data():
+      if not _is_service_enabled():
+          return _get_mock_data()  # Mock MUST be complete, not None
+      return _get_real_data()
+  ```
+  Verification: `grep -r "def get_\|def create_\|def update_\|def delete_" src/services/ | wc -l` should equal number of `_is_.*_enabled()` checks
+
+- [ ] **Auth Pattern Consistency** - ALL protected endpoints enforce authentication:
+  ```python
+  # Backend: REQUIRED for protected endpoints
+  @app.get("/protected")
+  async def endpoint(user_id: str = Depends(get_current_user)):
+  ```
+  ```typescript
+  // Frontend: REQUIRED for authenticated API calls
+  const { get: authGet } = useAuthenticatedApi();
+  const response = await authGet('/endpoint');  // NOT api.get()
+  ```
+  Verification: Search for `api.get\|api.post` without `useAuthenticatedApi` → should be 0
+
+- [ ] **Error Handling Pattern** - ALL service calls handle errors consistently
+
+### Configuration Schema Completeness
+
+- [ ] **All Config Fields Defined** - Every field referenced in code exists in config schema:
+  ```bash
+  # Find all settings.FIELD_NAME references
+  grep -roh "settings\.[A-Z_]*" src/ | sort -u > /tmp/used_fields.txt
+
+  # Verify each exists in EnvironmentConfig
+  # Any missing = FAIL
+  ```
+- [ ] **Config Schema Tested** - `test_environment.py` validates all required fields exist
+- [ ] **No Hardcoded Values** - Search for magic numbers/strings that should be config
+
+### API Contract Enforcement
+
+- [ ] **Response Models Defined** - Every endpoint has explicit `response_model=`:
+  ```python
+  @app.get("/reports/{id}", response_model=ReportResponse)  # REQUIRED
+  ```
+- [ ] **Field Naming Convention** - Backend uses snake_case consistently:
+  ```python
+  class ReportResponse(BaseModel):
+      report_id: str      # ✅ snake_case
+      created_at: datetime  # ✅ snake_case
+  ```
+- [ ] **Frontend Types Match Backend** - TypeScript types use same field names as backend response:
+  ```typescript
+  interface Report {
+    report_id: string;    // ✅ Matches backend
+    created_at: string;   // ✅ Matches backend
+  }
+  ```
+- [ ] **API Contract Test Exists** - Test validates response structure matches types
+
+### Dev Mode / Mock Data Completeness
+
+- [ ] **Mock Data is COMPLETE** - All mock return values have ALL required fields populated:
+  ```python
+  # ❌ BAD - causes "content not available" error
+  return Report(id=id, content=None)
+
+  # ✅ GOOD - complete mock data
+  return Report(id=id, content=_create_mock_content())
+  ```
+- [ ] **Mock Data is REALISTIC** - Values are valid (not empty strings, valid dates, etc.)
+- [ ] **Dev Mode End-to-End Test** - Test complete flow with mocks:
+  ```bash
+  # Set dev mode
+  ENABLE_SUPABASE=false ENABLE_PAYMENTS=false
+
+  # Test: initiate → fetch → verify content not null
+  ```
+
+### Browser Compatibility (Frontend)
+
+- [ ] **Third-Party Cookie Dependencies** - No features require third-party cookies:
+  ```typescript
+  // ❌ FAILS in Chrome (requires 3rd-party cookies)
+  <SignInButton mode="modal" />
+
+  // ✅ WORKS in all browsers
+  <Link href="/sign-in">Sign In</Link>
+  ```
+- [ ] **Tested in Chrome** - Strictest cookie policy, catches modal auth issues
+- [ ] **No Browser-Specific APIs** - Or polyfills provided
+
+---
+
 ## Commit Discipline
 
 ### Commit Frequency

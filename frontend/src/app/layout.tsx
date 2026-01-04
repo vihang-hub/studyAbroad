@@ -8,10 +8,9 @@
 
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
+import Link from 'next/link';
 import {
   ClerkProvider,
-  SignInButton,
-  SignUpButton,
   SignedIn,
   SignedOut,
   UserButton,
@@ -62,16 +61,19 @@ export default function RootLayout({
                 </div>
                 <div className="flex items-center gap-4">
                   <SignedOut>
-                    <SignInButton mode="modal">
-                      <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
-                        Sign In
-                      </button>
-                    </SignInButton>
-                    <SignUpButton mode="modal">
-                      <button className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        Sign Up
-                      </button>
-                    </SignUpButton>
+                    {/* Use path-based navigation instead of modal to avoid third-party cookie issues in Chrome */}
+                    <Link
+                      href="/login"
+                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Sign Up
+                    </Link>
                   </SignedOut>
                   <SignedIn>
                     <UserButton afterSignOutUrl="/" />

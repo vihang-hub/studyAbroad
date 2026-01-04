@@ -383,6 +383,337 @@ mutmut results
 
 ---
 
+## Phase 5: Integration & Compatibility Testing (NEW)
+
+**Purpose**: Catch integration bugs BEFORE manual testing. These tests would have caught all 7 issues from the 2026-01-04 debugging session.
+
+### ⏸️ T180: Cross-Browser Compatibility Testing
+
+**Status**: ⏸️ PENDING
+**Priority**: HIGH (Issue #1 - Chrome modal login failure)
+
+**Target Browsers**:
+- Chrome (strictest third-party cookie policy)
+- Safari (ITP policy)
+- Firefox (tracking prevention)
+
+**Test Cases**:
+```markdown
+| Test Case | Chrome | Safari | Firefox | Status |
+|-----------|--------|--------|---------|--------|
+| Login flow completes | ⏸️ | ⏸️ | ⏸️ | PENDING |
+| Auth state persists after refresh | ⏸️ | ⏸️ | ⏸️ | PENDING |
+| Protected routes redirect properly | ⏸️ | ⏸️ | ⏸️ | PENDING |
+| API calls include auth token | ⏸️ | ⏸️ | ⏸️ | PENDING |
+```
+
+**Common Failures to Check**:
+```typescript
+// ❌ FAILS in Chrome (requires 3rd-party cookies)
+<SignInButton mode="modal" />
+
+// ✅ WORKS in all browsers
+<Link href="/sign-in">Sign In</Link>
+```
+
+**Deliverable**: `/docs/testing/browser-compatibility-report.md`
+**Estimated Time**: 2-3 hours
+
+---
+
+### ⏸️ T181: API Contract Validation Testing
+
+**Status**: ⏸️ PENDING
+**Priority**: CRITICAL (Issue #5 - snake_case vs camelCase mismatch)
+
+**What to Validate**:
+1. Backend response field names match frontend type definitions
+2. All required fields present in responses
+3. Field naming convention consistent (snake_case)
+
+**Validation Script**:
+```bash
+# Extract backend response models
+grep -rh "class.*Response\|class.*Model" backend/src/api/models/ > /tmp/backend_models.txt
+
+# Extract frontend types
+grep -rh "interface.*\|type.*=" frontend/src/types/ > /tmp/frontend_types.txt
+
+# Compare field names (case-sensitive)
+python scripts/validate_api_contracts.py
+```
+
+**Test Cases**:
+```python
+def test_report_response_field_names():
+    """Verify Report response uses snake_case consistently"""
+    response = client.get("/reports/123")
+    assert "report_id" in response.json()  # NOT reportId
+    assert "created_at" in response.json()  # NOT createdAt
+    assert "user_id" in response.json()     # NOT userId
+
+def test_frontend_types_match_backend():
+    """Verify frontend types match backend exactly"""
+    # This test compares TypeScript types to Pydantic models
+    pass
+```
+
+**Deliverable**: `/docs/testing/api-contract-validation.md`
+**Estimated Time**: 3-4 hours
+
+---
+
+### ⏸️ T182: Architectural Pattern Compliance Testing
+
+**Status**: ⏸️ PENDING
+**Priority**: HIGH (Issues #3, #6 - Feature flags and auth patterns)
+
+**Patterns to Verify**:
+
+1. **Feature Flag Pattern** (Issue #3):
+```python
+def test_all_services_check_feature_flags():
+    """Every service function must check feature flags before external calls"""
+    service_files = glob("backend/src/api/services/*.py")
+    for file in service_files:
+        content = read_file(file)
+        # Count service functions
+        service_funcs = re.findall(r"def (get_|create_|update_|delete_)", content)
+        # Count feature flag checks
+        flag_checks = re.findall(r"_is_\w+_enabled\(\)", content)
+        assert len(flag_checks) >= len(service_funcs), f"{file} missing feature flag checks"
+```
+
+2. **Auth Pattern** (Issue #6):
+```python
+def test_all_protected_endpoints_require_auth():
+    """Every protected endpoint must use Depends(get_current_user)"""
+    route_files = glob("backend/src/api/routes/*.py")
+    for file in route_files:
+        content = read_file(file)
+        endpoints = re.findall(r'@app\.(get|post|put|delete)\("([^"]+)"', content)
+        for method, path in endpoints:
+            if path not in PUBLIC_ENDPOINTS:
+                assert "Depends(get_current_user)" in content, f"{path} missing auth"
+
+def test_frontend_uses_authenticated_api():
+    """Frontend pages must use useAuthenticatedApi for protected calls"""
+    page_files = glob("frontend/src/app/**/*.tsx")
+    for file in page_files:
+        content = read_file(file)
+        if "api.get" in content or "api.post" in content:
+            # Should use useAuthenticatedApi instead
+            assert "useAuthenticatedApi" in content, f"{file} uses unauthenticated API"
+```
+
+**Deliverable**: `/docs/testing/pattern-compliance-report.md`
+**Estimated Time**: 4-5 hours
+
+---
+
+### ⏸️ T183: Mock/Dev Mode Data Integrity Testing
+
+**Status**: ⏸️ PENDING
+**Priority**: HIGH (Issue #7 - Mock report content=None)
+
+**What to Validate**:
+- All mock return values have complete data (no None for required fields)
+- Mock data is realistic and valid
+- Dev mode flow works end-to-end
+
+**Test Cases**:
+```python
+def test_mock_report_has_complete_content():
+    """Mock report must have full content, not None"""
+    os.environ["ENABLE_SUPABASE"] = "false"
+    report = await get_report("test-id", "test-user")
+    assert report is not None
+    assert report.content is not None  # ← Would have caught Issue #7
+    assert len(report.content.sections) == 10
+    assert report.content.total_citations > 0
+
+def test_mock_report_content_is_realistic():
+    """Mock content must have valid, non-empty values"""
+    mock = _create_mock_report_content("test query")
+    for section in mock.sections:
+        assert len(section.heading) > 0
+        assert len(section.content) > 0
+        # Non-executive sections need citations
+        if section.heading not in ["Executive Summary", "Sources & Citations"]:
+            assert len(section.citations) >= 3
+
+def test_dev_mode_end_to_end_flow():
+    """Complete flow works with mocks"""
+    os.environ["ENABLE_SUPABASE"] = "false"
+    os.environ["ENABLE_PAYMENTS"] = "false"
+
+    # Create report
+    response = client.post("/reports/initiate", json={"query": "test"})
+    assert response.status_code == 200
+    report_id = response.json()["report_id"]
+
+    # Fetch report
+    response = client.get(f"/reports/{report_id}")
+    assert response.status_code == 200
+    assert response.json()["content"] is not None  # ← Critical check
+```
+
+**Deliverable**: `/docs/testing/mock-data-integrity-report.md`
+**Estimated Time**: 2-3 hours
+
+---
+
+### ⏸️ T184: Cross-Library Type Safety Testing
+
+**Status**: ⏸️ PENDING
+**Priority**: MEDIUM (Issue #2 - HttpUrl type error)
+
+**What to Validate**:
+- No type mismatches at library boundaries
+- Explicit conversions documented and tested
+
+**Test Cases**:
+```python
+def test_supabase_url_is_string():
+    """Supabase client receives string, not HttpUrl"""
+    # This would have caught Issue #2
+    from src.lib.supabase import get_supabase
+    client = get_supabase()
+    # If HttpUrl was passed directly, this would fail
+    assert client is not None
+
+def test_type_conversions_documented():
+    """All library boundary conversions have tests"""
+    conversions = [
+        ("HttpUrl", "str", "src/lib/supabase.py"),
+        # Add more as discovered
+    ]
+    for source, target, location in conversions:
+        # Verify conversion exists and is tested
+        pass
+```
+
+**Deliverable**: `/docs/testing/type-safety-report.md`
+**Estimated Time**: 2-3 hours
+
+---
+
+### ⏸️ T185: Configuration Completeness Testing
+
+**Status**: ⏸️ PENDING
+**Priority**: MEDIUM (Issue #4 - Missing REPORT_EXPIRY_DAYS)
+
+**What to Validate**:
+- All config fields referenced in code exist in schema
+- No missing environment variables
+
+**Test Cases**:
+```python
+def test_all_settings_fields_exist():
+    """Every settings.FIELD_NAME reference has corresponding config field"""
+    # Find all settings.XXX references
+    references = extract_settings_references("backend/src/")
+
+    # Verify each exists in EnvironmentConfig
+    config = EnvironmentConfig()
+    for field in references:
+        assert hasattr(config, field), f"Missing config field: {field}"
+
+def test_report_expiry_days_defined():
+    """REPORT_EXPIRY_DAYS must exist (caught Issue #4)"""
+    config = EnvironmentConfig()
+    assert hasattr(config, "REPORT_EXPIRY_DAYS")
+    assert config.REPORT_EXPIRY_DAYS == 30
+```
+
+**Deliverable**: `/docs/testing/config-completeness-report.md`
+**Estimated Time**: 1-2 hours
+
+---
+
+### Phase 5 Summary
+
+| Task | Issue Prevented | Priority | Time | Status |
+|------|-----------------|----------|------|--------|
+| T180 | #1 Chrome modal | HIGH | 2-3h | ⏸️ |
+| T181 | #5 snake_case | CRITICAL | 3-4h | ⏸️ |
+| T182 | #3, #6 Patterns | HIGH | 4-5h | ⏸️ |
+| T183 | #7 Mock data | HIGH | 2-3h | ⏸️ |
+| T184 | #2 Type safety | MEDIUM | 2-3h | ⏸️ |
+| T185 | #4 Config | MEDIUM | 1-2h | ⏸️ |
+| **TOTAL** | **All 7 issues** | - | **14-20h** | ⏸️ |
+
+**Impact**: These tests would have caught ALL 7 debugging issues before manual testing.
+
+---
+
+### ⏸️ T186: Regression Test Suite for Debugging Fixes
+
+**Status**: ⏸️ PENDING
+**Priority**: CRITICAL (Prevent regression of fixed issues)
+
+**Purpose**: Permanent test suite to prevent re-introduction of the 7 debugging issues.
+
+**Test File**: `tests/test_debugging_regressions.py`
+
+```python
+"""
+Regression tests for issues found during 2026-01-04 debugging session.
+These tests MUST pass before any deployment.
+"""
+
+class TestDebuggingRegressions:
+    """Prevent regression of manual debugging fixes"""
+
+    def test_issue1_no_modal_auth_in_chrome(self):
+        """Issue #1: Chrome login must use path navigation, not modal"""
+        layout_content = read_file("frontend/src/app/layout.tsx")
+        assert 'mode="modal"' not in layout_content
+        assert '<Link href="/login"' in layout_content or '<Link href="/sign-in"' in layout_content
+
+    def test_issue2_httpurl_converted_to_string(self):
+        """Issue #2: HttpUrl must be converted to string for Supabase"""
+        supabase_content = read_file("backend/src/lib/supabase.py")
+        assert "str(settings.SUPABASE_URL)" in supabase_content
+
+    def test_issue3_feature_flags_in_services(self):
+        """Issue #3: All service functions must check feature flags"""
+        report_service = read_file("backend/src/api/services/report_service.py")
+        assert "_is_supabase_enabled()" in report_service
+        assert "if not _is_supabase_enabled():" in report_service
+
+    def test_issue4_report_expiry_days_defined(self):
+        """Issue #4: REPORT_EXPIRY_DAYS must be defined in config"""
+        from backend.src.config import settings
+        assert hasattr(settings, "REPORT_EXPIRY_DAYS")
+
+    def test_issue5_api_uses_snake_case(self):
+        """Issue #5: API responses must use snake_case field names"""
+        response = client.get("/reports/test-id")
+        if response.status_code == 200:
+            data = response.json()
+            assert "report_id" not in data or "reportId" not in data
+
+    def test_issue6_pages_use_authenticated_api(self):
+        """Issue #6: Protected pages must use useAuthenticatedApi"""
+        success_page = read_file("frontend/src/app/(app)/chat/success/page.tsx")
+        report_page = read_file("frontend/src/app/(app)/report/[id]/page.tsx")
+        assert "useAuthenticatedApi" in success_page
+        assert "useAuthenticatedApi" in report_page
+
+    def test_issue7_mock_report_has_content(self):
+        """Issue #7: Mock report must have complete content, not None"""
+        os.environ["ENABLE_SUPABASE"] = "false"
+        report = await get_report("test-id", "test-user")
+        assert report.content is not None
+        assert len(report.content.sections) == 10
+```
+
+**Deliverable**: `backend/tests/test_debugging_regressions.py`
+**Estimated Time**: 2-3 hours
+
+---
+
 ## Summary
 
 ### Current Progress

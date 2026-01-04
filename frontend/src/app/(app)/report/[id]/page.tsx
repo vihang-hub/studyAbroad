@@ -5,9 +5,9 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { api } from '@/lib/api-client';
+import { useAuthenticatedApi } from '@/hooks/useAuthenticatedApi';
 import type { Report } from '@/types/report';
 import { ExecutiveSummary } from '@/components/reports/ExecutiveSummary';
 import { ReportSection } from '@/components/reports/ReportSection';
@@ -16,32 +16,33 @@ export default function ReportDetailPage() {
   const params = useParams();
   const router = useRouter();
   const reportId = params.id as string;
+  const { get: authGet } = useAuthenticatedApi();
 
   const [report, setReport] = useState<Report | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.get<Report>(`/reports/${reportId}`);
+  const fetchReport = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await authGet<Report>(`/reports/${reportId}`);
 
-        if (response.error || !response.data) {
-          setError(response.error?.message || 'Failed to load report');
-          return;
-        }
-
-        setReport(response.data);
-      } catch (err) {
-        setError('Failed to load report');
-      } finally {
-        setIsLoading(false);
+      if (response.error || !response.data) {
+        setError(response.error?.message || 'Failed to load report');
+        return;
       }
-    };
 
+      setReport(response.data);
+    } catch (err) {
+      setError('Failed to load report');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [reportId, authGet]);
+
+  useEffect(() => {
     fetchReport();
-  }, [reportId]);
+  }, [fetchReport]);
 
   if (isLoading) {
     return (

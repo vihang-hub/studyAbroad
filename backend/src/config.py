@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     STRIPE_CURRENCY: str = "gbp"
 
     # CORS
-    ALLOWED_ORIGINS: Union[List[str], str] = "http://localhost:3000,http://127.0.0.1:3000"
+    ALLOWED_ORIGINS: Union[List[str], str] = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
 
     # Cron Secret (for scheduled jobs)
     CRON_SECRET: str

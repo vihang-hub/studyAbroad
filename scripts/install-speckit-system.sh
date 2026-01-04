@@ -863,6 +863,123 @@ Track checkpoint results:
 
 ---
 
+## Cross-Layer Integration Checks
+
+**CRITICAL**: These checks prevent the most common integration bugs found during manual testing.
+
+### Cross-Library Type Safety
+
+- [ ] **Type Checker Exit Code 0** - After implementation:
+  \`\`\`bash
+  # Python: Verify no type mismatches between libraries
+  mypy src/ --strict 2>&1 | grep -E "error:|incompatible" && echo "FAIL" || echo "PASS"
+
+  # TypeScript: Verify all types resolve
+  npx tsc --noEmit
+  \`\`\`
+- [ ] **Library Boundary Conversions** - Document any type conversions:
+  | Source Type | Target Type | Conversion Location | Test Case |
+  |-------------|-------------|---------------------|-----------|
+  | Pydantic HttpUrl | str | _location_ | _test_name_ |
+  | _type_ | _type_ | _location_ | _test_name_ |
+
+- [ ] **No Implicit Conversions** - All library boundary crossings use explicit conversion functions
+
+### Architectural Pattern Consistency
+
+- [ ] **Feature Flag Pattern** - ALL service functions check flags before external calls:
+  \`\`\`python
+  # REQUIRED pattern for every service function that uses external services
+  def get_data():
+      if not _is_service_enabled():
+          return _get_mock_data()  # Mock MUST be complete, not None
+      return _get_real_data()
+  \`\`\`
+  Verification: \`grep -r "def get_\\|def create_\\|def update_\\|def delete_" src/services/ | wc -l\` should equal number of \`_is_.*_enabled()\` checks
+
+- [ ] **Auth Pattern Consistency** - ALL protected endpoints enforce authentication:
+  \`\`\`python
+  # Backend: REQUIRED for protected endpoints
+  @app.get("/protected")
+  async def endpoint(user_id: str = Depends(get_current_user)):
+  \`\`\`
+  \`\`\`typescript
+  // Frontend: REQUIRED for authenticated API calls
+  const { get: authGet } = useAuthenticatedApi();
+  const response = await authGet('/endpoint');  // NOT api.get()
+  \`\`\`
+  Verification: Search for \`api.get\\|api.post\` without \`useAuthenticatedApi\` → should be 0
+
+- [ ] **Error Handling Pattern** - ALL service calls handle errors consistently
+
+### Configuration Schema Completeness
+
+- [ ] **All Config Fields Defined** - Every field referenced in code exists in config schema:
+  \`\`\`bash
+  # Find all settings.FIELD_NAME references
+  grep -roh "settings\\.[A-Z_]*" src/ | sort -u > /tmp/used_fields.txt
+
+  # Verify each exists in EnvironmentConfig
+  # Any missing = FAIL
+  \`\`\`
+- [ ] **Config Schema Tested** - \`test_environment.py\` validates all required fields exist
+- [ ] **No Hardcoded Values** - Search for magic numbers/strings that should be config
+
+### API Contract Enforcement
+
+- [ ] **Response Models Defined** - Every endpoint has explicit \`response_model=\`:
+  \`\`\`python
+  @app.get("/reports/{id}", response_model=ReportResponse)  # REQUIRED
+  \`\`\`
+- [ ] **Field Naming Convention** - Backend uses snake_case consistently:
+  \`\`\`python
+  class ReportResponse(BaseModel):
+      report_id: str      # ✅ snake_case
+      created_at: datetime  # ✅ snake_case
+  \`\`\`
+- [ ] **Frontend Types Match Backend** - TypeScript types use same field names as backend response:
+  \`\`\`typescript
+  interface Report {
+    report_id: string;    // ✅ Matches backend
+    created_at: string;   // ✅ Matches backend
+  }
+  \`\`\`
+- [ ] **API Contract Test Exists** - Test validates response structure matches types
+
+### Dev Mode / Mock Data Completeness
+
+- [ ] **Mock Data is COMPLETE** - All mock return values have ALL required fields populated:
+  \`\`\`python
+  # ❌ BAD - causes "content not available" error
+  return Report(id=id, content=None)
+
+  # ✅ GOOD - complete mock data
+  return Report(id=id, content=_create_mock_content())
+  \`\`\`
+- [ ] **Mock Data is REALISTIC** - Values are valid (not empty strings, valid dates, etc.)
+- [ ] **Dev Mode End-to-End Test** - Test complete flow with mocks:
+  \`\`\`bash
+  # Set dev mode
+  ENABLE_SUPABASE=false ENABLE_PAYMENTS=false
+
+  # Test: initiate → fetch → verify content not null
+  \`\`\`
+
+### Browser Compatibility (Frontend)
+
+- [ ] **Third-Party Cookie Dependencies** - No features require third-party cookies:
+  \`\`\`typescript
+  // ❌ FAILS in Chrome (requires 3rd-party cookies)
+  <SignInButton mode="modal" />
+
+  // ✅ WORKS in all browsers
+  <Link href="/sign-in">Sign In</Link>
+  \`\`\`
+- [ ] **Tested in Chrome** - Strictest cookie policy, catches modal auth issues
+- [ ] **No Browser-Specific APIs** - Or polyfills provided
+
+---
+
 ## Commit Discipline
 
 ### Commit Frequency
@@ -987,9 +1104,114 @@ cat > "$PROJECT_ROOT/agents/checklists/Gate5-QA.md" << 'EOF'
 - [ ] docs/testing/coverage.md updated
 - [ ] docs/testing/mutation.md updated
 
+---
+
+## Phase 5: Integration & Compatibility Testing
+
+**Purpose**: Prevent integration bugs found during manual testing. These tests catch issues at layer boundaries.
+
+### T180: Cross-Browser Compatibility Testing
+
+**Priority**: HIGH
+**Effort**: 2-3 hours
+
+**Checklist**:
+- [ ] Chrome incognito mode tested (strictest settings)
+- [ ] Firefox tested
+- [ ] Safari tested (if applicable)
+- [ ] No \`mode="modal"\` for Clerk SignInButton
+- [ ] Path-based navigation used for auth flows
+- [ ] No third-party cookie dependencies
+
+### T181: API Contract Validation Testing (CRITICAL)
+
+**Priority**: CRITICAL
+**Effort**: 3-4 hours
+
+**Checklist**:
+- [ ] Contract test file exists: \`tests/api-contracts.test.ts\`
+- [ ] All API paths match between frontend and backend
+- [ ] All response field names use snake_case
+- [ ] Frontend types match backend response models exactly
+- [ ] No \`reportId\` vs \`report_id\` mismatches
+- [ ] No \`createdAt\` vs \`created_at\` mismatches
+
+### T182: Architectural Pattern Compliance Testing
+
+**Priority**: HIGH
+**Effort**: 2-3 hours
+
+**Checklist**:
+- [ ] All service functions check feature flags before external calls
+- [ ] Pattern: \`if not _is_*_enabled(): return mock_data\`
+- [ ] All protected endpoints use \`Depends(get_current_user)\`
+- [ ] All frontend API calls use \`useAuthenticatedApi()\` hook
+- [ ] No raw \`api.get()\` or \`fetch()\` for authenticated endpoints
+
+### T183: Mock/Dev Mode Data Integrity Testing
+
+**Priority**: HIGH
+**Effort**: 2-3 hours
+
+**Checklist**:
+- [ ] All mock return values have complete data
+- [ ] No mock returns \`content=None\` or empty objects
+- [ ] Mock data is realistic (valid dates, non-empty strings)
+- [ ] Dev mode end-to-end flow works without errors
+- [ ] Test: set \`ENABLE_SUPABASE=false\`, fetch report, verify content exists
+
+### T184: Cross-Library Type Safety Testing
+
+**Priority**: MEDIUM
+**Effort**: 1-2 hours
+
+**Checklist**:
+- [ ] All \`HttpUrl\` types converted to \`str\` before library calls
+- [ ] Type conversions documented in code comments
+- [ ] Integration tests verify library boundaries work
+- [ ] No \`TypeError\` or \`ValidationError\` at runtime
+
+### T185: Configuration Completeness Testing
+
+**Priority**: MEDIUM
+**Effort**: 1-2 hours
+
+**Checklist**:
+- [ ] Every \`settings.FIELD_NAME\` reference has config field
+- [ ] \`test_environment.py\` validates all required fields
+- [ ] No \`AttributeError\` for missing config fields
+- [ ] Default values are reasonable for dev mode
+
+### T186: Regression Test Suite
+
+**Priority**: HIGH
+**Effort**: 2-3 hours
+
+**Checklist**:
+- [ ] \`tests/test_debugging_regressions.py\` exists
+- [ ] Tests for Issue #2: HttpUrl type conversion
+- [ ] Tests for Issue #3: Feature flag checks
+- [ ] Tests for Issue #4: Config field existence
+- [ ] Tests for Issue #5: snake_case field naming
+- [ ] Tests for Issue #7: Mock data completeness
+- [ ] All regression tests passing
+
+---
+
 ## Gate Result
 
 **Status**: ⏳ PENDING | ✅ PASS | ❌ FAIL
+
+**Phase 5 Status**:
+| Task | Status |
+|------|--------|
+| T180 Browser Compat | ⏳/✅/❌ |
+| T181 API Contracts | ⏳/✅/❌ |
+| T182 Pattern Compliance | ⏳/✅/❌ |
+| T183 Mock Data | ⏳/✅/❌ |
+| T184 Type Safety | ⏳/✅/❌ |
+| T185 Config Complete | ⏳/✅/❌ |
+| T186 Regression Tests | ⏳/✅/❌ |
 
 ---
 **Reviewed by**: qa-tester agent
@@ -1023,6 +1245,100 @@ cat > "$PROJECT_ROOT/agents/checklists/Gate6-Validation.md" << 'EOF'
 
 - [ ] README up to date
 - [ ] API docs match implementation
+
+---
+
+## Cross-Layer Integration Verification
+
+**Purpose**: Prevent integration bugs found during manual testing. These checks would have caught all 7 debugging issues from retrospective analysis.
+
+### UI ↔ API Contract Verification
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| All API calls have matching endpoints | ⏳ | _Run \`npm run validate:api-contracts\`_ |
+| All response fields match frontend types | ⏳ | _Field name comparison report_ |
+| Field naming convention consistent (snake_case) | ⏳ | _Search for camelCase in responses_ |
+| API contract tests exist | ⏳ | _Test file locations_ |
+
+**Checklist**:
+- [ ] Backend uses snake_case for all response fields
+- [ ] Frontend types use snake_case to match backend
+- [ ] No \`reportId\` vs \`report_id\` mismatches
+- [ ] No \`createdAt\` vs \`created_at\` mismatches
+
+### Backend ↔ External Service Verification
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Type conversions at library boundaries | ⏳ | _Conversion locations documented_ |
+| Feature flag checks in all services | ⏳ | _Pattern compliance report_ |
+| Mock data completeness | ⏳ | _Mock integrity test results_ |
+
+**Checklist**:
+- [ ] All \`HttpUrl\` types converted to \`str\` before passing to libraries
+- [ ] All service functions check \`_is_*_enabled()\` before external calls
+- [ ] All mock return values have complete data (not None)
+- [ ] Dev mode end-to-end test passes
+
+### Frontend ↔ Browser Compatibility
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| Chrome compatibility tested | ⏳ | _Browser test results_ |
+| No third-party cookie dependencies | ⏳ | _Cookie audit report_ |
+| Auth flow works in strict mode | ⏳ | _Login test results_ |
+
+**Checklist**:
+- [ ] No \`mode="modal"\` for Clerk SignInButton (requires 3rd-party cookies)
+- [ ] Path-based navigation used for auth flows
+- [ ] Tested in Chrome incognito mode (strictest settings)
+
+### Architecture Pattern Compliance
+
+| Pattern | Status | Evidence |
+|---------|--------|----------|
+| Feature Flag Pattern | ⏳ | _Service function audit_ |
+| Auth Pattern | ⏳ | _Endpoint auth check audit_ |
+| Error Handling Pattern | ⏳ | _Error handling audit_ |
+
+**Checklist**:
+- [ ] All protected endpoints use \`Depends(get_current_user)\`
+- [ ] All frontend API calls use \`useAuthenticatedApi()\` hook
+- [ ] All service functions check feature flags
+- [ ] All error responses follow consistent format
+
+### Configuration Completeness
+
+| Check | Status | Evidence |
+|-------|--------|----------|
+| All config fields defined | ⏳ | _Config schema validation_ |
+| No hardcoded values | ⏳ | _Magic value scan_ |
+| Config tests exist | ⏳ | _Test file locations_ |
+
+**Checklist**:
+- [ ] Every \`settings.FIELD_NAME\` reference has corresponding config field
+- [ ] \`test_environment.py\` validates all required fields
+- [ ] No magic numbers/strings that should be config
+
+### Regression Test Coverage
+
+| Issue | Test Exists | Passing | Location |
+|-------|-------------|---------|----------|
+| #1 Chrome modal | ⏳ | ⏳ | _frontend test needed_ |
+| #2 HttpUrl type | ⏳ | ⏳ | _test_debugging_regressions.py_ |
+| #3 Feature flags | ⏳ | ⏳ | _test_debugging_regressions.py_ |
+| #4 Config field | ⏳ | ⏳ | _test_debugging_regressions.py_ |
+| #5 snake_case | ⏳ | ⏳ | _test_debugging_regressions.py_ |
+| #6 Auth pattern | ⏳ | ⏳ | _frontend test needed_ |
+| #7 Mock content | ⏳ | ⏳ | _test_debugging_regressions.py_ |
+
+**Checklist**:
+- [ ] Regression test suite exists: \`backend/tests/test_debugging_regressions.py\`
+- [ ] All backend regression tests passing
+- [ ] Regression tests run in CI pipeline
+
+---
 
 ## Gate Result
 

@@ -19,7 +19,9 @@ def get_supabase() -> Client:
     global _supabase_client
 
     if _supabase_client is None:
-        _supabase_client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+        # Convert HttpUrl to string for Supabase library compatibility
+        supabase_url = str(settings.SUPABASE_URL) if settings.SUPABASE_URL else ""
+        _supabase_client = create_client(supabase_url, settings.SUPABASE_SERVICE_ROLE_KEY)
 
     return _supabase_client
 
@@ -29,4 +31,6 @@ def get_supabase_anon() -> Client:
     Get Supabase client with anon key (respects RLS policies)
     Use this when you want to enforce Row Level Security
     """
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY)
+    # Convert HttpUrl to string for Supabase library compatibility
+    supabase_url = str(settings.SUPABASE_URL) if settings.SUPABASE_URL else ""
+    return create_client(supabase_url, settings.SUPABASE_ANON_KEY)

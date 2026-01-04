@@ -44,7 +44,8 @@ export function usePayment(options: UsePaymentOptions): UsePaymentReturn {
         logInfo('Payment bypassed in dev/test mode', { query });
 
         interface CreateReportResponse {
-          reportId?: string;
+          report_id?: string;  // Backend uses snake_case
+          reportId?: string;   // Keep for backwards compatibility
           id?: string;
         }
 
@@ -54,7 +55,8 @@ export function usePayment(options: UsePaymentOptions): UsePaymentReturn {
           throw new Error(response.error.message);
         }
 
-        const reportId = response.data?.reportId || response.data?.id;
+        // Backend uses snake_case (report_id), check all possible formats
+        const reportId = response.data?.report_id || response.data?.reportId || response.data?.id;
         if (reportId) {
           onSuccess?.(reportId);
         } else {

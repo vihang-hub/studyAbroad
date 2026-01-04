@@ -7,11 +7,32 @@ import stripe
 from datetime import datetime
 from typing import Optional
 from src.config import settings
-from src.lib.supabase import get_supabase
 from src.api.models.payment import Payment, PaymentStatus, CreateCheckoutResponse
+from src.feature_flags import feature_flags, Feature
 
-# Initialize Stripe
+# Note: get_supabase is imported dynamically in _get_supabase() to avoid
+# initialization errors when Supabase is disabled
+
+# Initialize Stripe (will be None if key not set)
 stripe.api_key = settings.STRIPE_SECRET_KEY
+
+
+def _is_payments_enabled() -> bool:
+    """Check if payments are enabled via feature flag"""
+    return feature_flags.is_enabled(Feature.PAYMENTS)
+
+
+def _is_supabase_enabled() -> bool:
+    """Check if Supabase is enabled via feature flag"""
+    return feature_flags.is_enabled(Feature.SUPABASE)
+
+
+def _get_supabase():
+    """Get Supabase client only when enabled"""
+    if not _is_supabase_enabled():
+        raise RuntimeError("Supabase is disabled in dev mode")
+    from src.lib.supabase import get_supabase
+    return get_supabase()
 
 
 async def create_checkout_session(
@@ -21,6 +42,11 @@ async def create_checkout_session(
     Create Stripe payment intent for report generation
     Returns client secret for frontend Stripe Elements
     """
+    # In dev mode without payments enabled, this shouldn't be called
+    # but provide protection anyway
+    if not _is_payments_enabled():
+        raise RuntimeError("Payments are disabled in dev mode")
+
     try:
         # Create Stripe Payment Intent
         payment_intent = stripe.PaymentIntent.create(
@@ -34,18 +60,19 @@ async def create_checkout_session(
             automatic_payment_methods={"enabled": True},
         )
 
-        # Create Payment record in database
-        supabase = get_supabase()
-        payment_data = {
-            "user_id": user_id,
-            "report_id": report_id,
-            "stripe_payment_intent_id": payment_intent.id,
-            "amount": settings.STRIPE_PRICE_AMOUNT,
-            "currency": settings.STRIPE_CURRENCY,
-            "status": PaymentStatus.PENDING.value,
-        }
+        # Create Payment record in database (only if Supabase is enabled)
+        if _is_supabase_enabled():
+            supabase = _get_supabase()
+            payment_data = {
+                "user_id": user_id,
+                "report_id": report_id,
+                "stripe_payment_intent_id": payment_intent.id,
+                "amount": settings.STRIPE_PRICE_AMOUNT,
+                "currency": settings.STRIPE_CURRENCY,
+                "status": PaymentStatus.PENDING.value,
+            }
 
-        supabase.table("payments").insert(payment_data).execute()
+            supabase.table("payments").insert(payment_data).execute()
 
         return CreateCheckoutResponse(
             client_secret=payment_intent.client_secret,
@@ -64,7 +91,11 @@ async def update_payment_status(
     """
     Update payment status after webhook event
     """
-    supabase = get_supabase()
+    # In dev mode without Supabase, return None
+    if not _is_supabase_enabled():
+        return None
+
+    supabase = _get_supabase()
 
     update_data = {
         "status": status.value,
@@ -93,7 +124,11 @@ async def get_payment_by_intent_id(payment_intent_id: str) -> Optional[Payment]:
     """
     Get payment record by Stripe payment intent ID
     """
-    supabase = get_supabase()
+    # In dev mode without Supabase, return None
+    if not _is_supabase_enabled():
+        return None
+
+    supabase = _get_supabase()
 
     result = (
         supabase.table("payments")
