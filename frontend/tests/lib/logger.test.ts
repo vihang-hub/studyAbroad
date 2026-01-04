@@ -12,12 +12,11 @@ const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
-// Default mock config
+// Default mock config - use uppercase keys to match actual config structure
 const createMockConfig = (overrides = {}) => ({
-  apiUrl: 'http://localhost:8000',
-  logLevel: 'info',
-  mode: 'test',
-  environment: 'test',
+  API_URL: 'http://localhost:8000',
+  LOG_LEVEL: 'info',
+  ENVIRONMENT_MODE: 'test',
   ...overrides,
 });
 
@@ -113,7 +112,7 @@ describe('logger', () => {
   describe('Logger methods', () => {
     describe('debug', () => {
       it('should log debug message with metadata when log level is debug', async () => {
-        mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'debug' }));
+        mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'debug' }));
 
         const { getLogger } = await import('../../src/lib/logger');
         const logger = getLogger();
@@ -141,7 +140,7 @@ describe('logger', () => {
       });
 
       it('should not log debug message in production with info level', async () => {
-        mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'info' }));
+        mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'info' }));
         mockIsDevelopment.mockReturnValue(false);
 
         const { getLogger } = await import('../../src/lib/logger');
@@ -152,7 +151,7 @@ describe('logger', () => {
       });
 
       it('should handle debug without metadata', async () => {
-        mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'debug' }));
+        mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'debug' }));
 
         const { getLogger } = await import('../../src/lib/logger');
         const logger = getLogger();
@@ -275,7 +274,7 @@ describe('logger', () => {
   describe('Helper functions', () => {
     describe('logDebug', () => {
       it('should call logger.debug when debug level enabled', async () => {
-        mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'debug' }));
+        mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'debug' }));
 
         const { logDebug } = await import('../../src/lib/logger');
         logDebug('Debug via helper', { test: true });
@@ -287,7 +286,7 @@ describe('logger', () => {
       });
 
       it('should not log debug in info level', async () => {
-        mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'info' }));
+        mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'info' }));
         mockIsDevelopment.mockReturnValue(false);
 
         const { logDebug } = await import('../../src/lib/logger');
@@ -412,13 +411,13 @@ describe('logger', () => {
         );
       });
 
-      it('should log 4xx response as error', async () => {
+      it('should log 4xx response as warning (client errors)', async () => {
         const { logApiResponse } = await import('../../src/lib/logger');
         logApiResponse('POST', '/api/posts', 400, 100);
 
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-          '[ERROR] API Response: POST /api/posts 400',
-          undefined,
+        // 4xx are client errors - logged as warnings, not errors
+        expect(consoleWarnSpy).toHaveBeenCalledWith(
+          '[WARN] API Response: POST /api/posts 400',
           expect.objectContaining({
             method: 'POST',
             url: '/api/posts',
@@ -465,15 +464,16 @@ describe('logger', () => {
         const { logApiResponse } = await import('../../src/lib/logger');
 
         consoleInfoSpy.mockClear();
-        consoleErrorSpy.mockClear();
+        consoleWarnSpy.mockClear();
 
         logApiResponse('GET', '/redirect', 301, 50);
         expect(consoleInfoSpy).toHaveBeenCalled();
-        expect(consoleErrorSpy).not.toHaveBeenCalled();
+        expect(consoleWarnSpy).not.toHaveBeenCalled();
 
         consoleInfoSpy.mockClear();
+        // 4xx are client errors - logged as warnings, not errors
         logApiResponse('GET', '/not-found', 404, 50);
-        expect(consoleErrorSpy).toHaveBeenCalled();
+        expect(consoleWarnSpy).toHaveBeenCalled();
       });
     });
 
@@ -623,7 +623,7 @@ describe('logger', () => {
     });
 
     it('should merge child context with message metadata for debug', async () => {
-      mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'debug' }));
+      mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'debug' }));
 
       const { createChildLogger } = await import('../../src/lib/logger');
       const context = { module: 'auth' };
@@ -641,7 +641,7 @@ describe('logger', () => {
     });
 
     it('should work with all log levels', async () => {
-      mockGetConfig.mockReturnValue(createMockConfig({ logLevel: 'debug' }));
+      mockGetConfig.mockReturnValue(createMockConfig({ LOG_LEVEL: 'debug' }));
 
       const { createChildLogger } = await import('../../src/lib/logger');
       const context = { service: 'api' };

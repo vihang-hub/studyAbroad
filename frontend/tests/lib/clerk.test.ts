@@ -27,8 +27,8 @@ describe('clerk', () => {
   describe('getClerkConfig', () => {
     it('should return Clerk configuration from config', async () => {
       const mockConfig = {
-        clerkPublishableKey: 'pk_test_xxx',
-        clerkSecretKey: 'sk_test_xxx',
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_xxx',
+        CLERK_SECRET_KEY: 'sk_test_xxx',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -45,8 +45,8 @@ describe('clerk', () => {
 
     it('should handle undefined values', async () => {
       const mockConfig = {
-        clerkPublishableKey: undefined,
-        clerkSecretKey: undefined,
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: undefined,
+        CLERK_SECRET_KEY: undefined,
       };
 
       const { getConfig } = await import('../../src/lib/config');

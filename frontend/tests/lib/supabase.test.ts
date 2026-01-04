@@ -34,8 +34,8 @@ describe('supabase', () => {
   describe('getSupabaseConfig', () => {
     it('should return Supabase configuration from config', async () => {
       const mockConfig = {
-        supabaseUrl: 'https://test.supabase.co',
-        supabaseAnonKey: 'test-anon-key-123',
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_ANON_KEY: 'test-anon-key-123',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -52,8 +52,8 @@ describe('supabase', () => {
 
     it('should handle undefined values', async () => {
       const mockConfig = {
-        supabaseUrl: undefined,
-        supabaseAnonKey: undefined,
+        SUPABASE_URL: undefined,
+        SUPABASE_ANON_KEY: undefined,
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -70,8 +70,8 @@ describe('supabase', () => {
 
     it('should handle empty strings', async () => {
       const mockConfig = {
-        supabaseUrl: '',
-        supabaseAnonKey: '',
+        SUPABASE_URL: '',
+        SUPABASE_ANON_KEY: '',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -90,8 +90,8 @@ describe('supabase', () => {
   describe('getSupabase', () => {
     it('should create and return Supabase client', async () => {
       const mockConfig = {
-        supabaseUrl: 'https://test.supabase.co',
-        supabaseAnonKey: 'test-anon-key-123',
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_ANON_KEY: 'test-anon-key-123',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -111,8 +111,8 @@ describe('supabase', () => {
 
     it('should create client with correct parameters', async () => {
       const mockConfig = {
-        supabaseUrl: 'https://production.supabase.co',
-        supabaseAnonKey: 'production-anon-key-456',
+        SUPABASE_URL: 'https://production.supabase.co',
+        SUPABASE_ANON_KEY: 'production-anon-key-456',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -131,8 +131,8 @@ describe('supabase', () => {
 
     it('should return a client with expected methods', async () => {
       const mockConfig = {
-        supabaseUrl: 'https://test.supabase.co',
-        supabaseAnonKey: 'test-key',
+        SUPABASE_URL: 'https://test.supabase.co',
+        SUPABASE_ANON_KEY: 'test-key',
       };
 
       const { getConfig } = await import('../../src/lib/config');

@@ -15,12 +15,30 @@ vi.mock('../../src/lib/logger', () => ({
   logInfo: vi.fn(),
 }));
 
-vi.mock('@study-abroad/shared-feature-flags', () => ({
-  FeatureFlags: vi.fn().mockImplementation(() => ({
+// Mock the shared feature flags module with static methods
+vi.mock('@study-abroad/shared-feature-flags', () => {
+  // Create mock class with static methods inside factory
+  const MockFeatureFlags = {
+    getEnvironmentMode: vi.fn().mockReturnValue('dev'),
+    getAllFlags: vi.fn().mockReturnValue({
+      ENABLE_SUPABASE: true,
+      ENABLE_PAYMENTS: false,
+      ENABLE_RATE_LIMITING: true,
+      ENABLE_OBSERVABILITY: false,
+    }),
     isEnabled: vi.fn((feature: string) => feature === 'ENABLE_SUPABASE'),
-  })),
-  Feature: {},
-}));
+  };
+
+  return {
+    FeatureFlags: MockFeatureFlags,
+    Feature: {
+      SUPABASE: 'ENABLE_SUPABASE',
+      PAYMENTS: 'ENABLE_PAYMENTS',
+      RATE_LIMITING: 'ENABLE_RATE_LIMITING',
+      OBSERVABILITY: 'ENABLE_OBSERVABILITY',
+    },
+  };
+});
 
 describe('FeatureFlagProvider', () => {
   beforeEach(() => {
@@ -56,7 +74,7 @@ describe('FeatureFlagProvider', () => {
 
     it('should initialize feature flags from config', async () => {
       const mockConfig = {
-        mode: 'development',
+        mode: 'dev',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -73,11 +91,13 @@ describe('FeatureFlagProvider', () => {
       );
 
       await waitFor(() => {
-        expect(FeatureFlags).toHaveBeenCalledWith('development');
+        // Provider uses static methods, not constructor
+        expect(FeatureFlags.getEnvironmentMode).toHaveBeenCalled();
+        expect(FeatureFlags.getAllFlags).toHaveBeenCalled();
         expect(logInfo).toHaveBeenCalledWith(
           'Feature flags initialized',
           expect.objectContaining({
-            environmentMode: 'development',
+            environmentMode: 'dev', // Mock returns 'dev'
           })
         );
       });
@@ -86,9 +106,10 @@ describe('FeatureFlagProvider', () => {
     it('should handle config errors gracefully', async () => {
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-      const { getConfig } = await import('../../src/lib/config');
-      (getConfig as unknown as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        throw new Error('Config error');
+      // Mock FeatureFlags.getEnvironmentMode to throw (provider uses this, not getConfig)
+      const { FeatureFlags } = await import('@study-abroad/shared-feature-flags');
+      (FeatureFlags.getEnvironmentMode as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        throw new Error('FeatureFlags initialization error');
       });
 
       const { FeatureFlagProvider } = await import('../../src/providers/feature-flag-provider');
@@ -106,10 +127,12 @@ describe('FeatureFlagProvider', () => {
         );
       });
 
-      // Should still render children
+      // Should still render children despite error
       expect(screen.getByTestId('child')).toBeInTheDocument();
 
       consoleErrorSpy.mockRestore();
+      // Restore the mock for other tests
+      (FeatureFlags.getEnvironmentMode as ReturnType<typeof vi.fn>).mockReturnValue('dev');
     });
   });
 
@@ -194,7 +217,7 @@ describe('FeatureFlagProvider', () => {
   describe('useEnvironment hook', () => {
     it('should return current environment', async () => {
       const mockConfig = {
-        mode: 'production',
+        mode: 'dev',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -215,8 +238,9 @@ describe('FeatureFlagProvider', () => {
         </FeatureFlagProvider>
       );
 
+      // Mock returns 'dev' for getEnvironmentMode()
       await waitFor(() => {
-        expect(environment).toBe('production');
+        expect(environment).toBe('dev');
       });
     });
   });
@@ -300,7 +324,7 @@ describe('FeatureFlagProvider', () => {
   describe('EnvironmentGate component', () => {
     it('should render children when in allowed environment', async () => {
       const mockConfig = {
-        mode: 'development',
+        mode: 'dev',
       };
 
       const { getConfig } = await import('../../src/lib/config');
@@ -310,7 +334,8 @@ describe('FeatureFlagProvider', () => {
 
       render(
         <FeatureFlagProvider>
-          <EnvironmentGate environments={['development', 'staging']}>
+          {/* Use valid EnvironmentMode values: 'dev' | 'test' | 'production' */}
+          <EnvironmentGate environments={['dev', 'test']}>
             <div data-testid="env-content">Dev Content</div>
           </EnvironmentGate>
         </FeatureFlagProvider>

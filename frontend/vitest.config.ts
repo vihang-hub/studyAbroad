@@ -8,6 +8,16 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],
+    // Exclude tests that require external services (backend, browser)
+    // Use specific commands for these: npm run test:contracts, test:integration, test:e2e
+    exclude: [
+      '**/node_modules/**',
+      '**/dist/**',
+      'tests/contracts/**',           // Requires running backend
+      'tests/integration/**',         // Requires running backend
+      'src/__tests__/integration/**', // Requires running backend
+      'e2e/**',                       // Requires Playwright browser
+    ],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
